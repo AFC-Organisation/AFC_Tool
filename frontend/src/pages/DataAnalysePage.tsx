@@ -24,7 +24,7 @@ import { StrategicInsights } from '../components/analytics/StrategicInsights';
 import { ChartCard } from '../components/analytics/ChartCard';
 
 // ── NEW IMPORTS ────────────────────────────────────────────────────────────────
-import { LoyaltyChart } from '../components/analytics/';
+import { LoyaltyChart } from '../components/analytics/Loyaltychart';
 import { RegistrationTimingChart } from '../components/analytics/Registrationtimingchart ';
 import { FunFactsGrid } from '../components/analytics/Funfactsgrid ';
 import { UniqueAttendeesChart } from '../components/analytics/Uniqueattendeeschart ';
