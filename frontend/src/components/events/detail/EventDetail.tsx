@@ -213,61 +213,89 @@ export function EventDetail({ event }: EventDetailProps) {
       )}
 
       {/* Feedback summary */}
-      {event.status === 'compleet' && event.feedback && event.feedback.length > 0 && (
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="pb-2 pt-4 px-4 border-b border-slate-100">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-[#041c3a] flex items-center gap-2">
-              <MessageSquare className="w-3.5 h-3.5 text-[#ed6425]" />
-              Feedback overzicht
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-            <div className="space-y-2">
-              {event.feedback.slice(0, 5).map((fb) => (
-                <div
-                  key={fb.id}
-                  className="p-3 bg-slate-50 rounded-lg border border-slate-100"
-                >
-                  <div className="flex items-center gap-3 mb-1.5">
-                    {fb.schaal_1 && (
-                      <span className="text-xs font-semibold text-[#041c3a] bg-[#041c3a]/10 px-2 py-0.5 rounded">
-                        V1: {fb.schaal_1}/10
-                      </span>
-                    )}
-                    {fb.schaal_2 && (
-                      <span className="text-xs font-semibold text-[#041c3a] bg-[#041c3a]/10 px-2 py-0.5 rounded">
-                        V2: {fb.schaal_2}/10
-                      </span>
-                    )}
-                    {fb.schaal_3 && (
-                      <span className="text-xs font-semibold text-[#041c3a] bg-[#041c3a]/10 px-2 py-0.5 rounded">
-                        V3: {fb.schaal_3}/10
-                      </span>
-                    )}
-                  </div>
-                  {fb.wat_kon_beter && (
-                    <p className="text-xs text-slate-600">
-                      <span className="font-semibold text-slate-700">Beter: </span>
-                      {fb.wat_kon_beter}
-                    </p>
-                  )}
-                  {fb.favo_onderdeel && (
-                    <p className="text-xs text-slate-600">
-                      <span className="font-semibold text-slate-700">Favoriet: </span>
-                      {fb.favo_onderdeel}
-                    </p>
-                  )}
-                </div>
-              ))}
-              {event.feedback.length > 5 && (
-                <p className="text-xs text-slate-400 text-center pt-1">
-                  + {event.feedback.length - 5} andere responses
-                </p>
-              )}
+      {event.status === 'compleet' && event.feedback && event.feedback.length > 0 && (() => {
+        const fb = event.feedback;
+        const avg = (key: 'schaal_1' | 'schaal_2' | 'schaal_3') => {
+          const vals = fb.map(f => f[key]).filter(Boolean) as number[];
+          return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null;
+        };
+        const avg1 = avg('schaal_1');
+        const avg2 = avg('schaal_2');
+        const avg3 = avg('schaal_3');
+
+        const ScoreBar = ({ score, max = 5 }: { score: number; max?: number }) => (
+          <div className="flex items-center gap-2 flex-1">
+            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[#041c3a] to-[#ed6425] rounded-full transition-all"
+                style={{ width: `${(score / max) * 100}%` }}
+              />
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <span className="text-sm font-black text-[#041c3a] w-8 text-right">{score}</span>
+          </div>
+        );
+
+        return (
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="pb-2 pt-4 px-4 border-b border-slate-100">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-[#041c3a] flex items-center gap-2">
+                <MessageSquare className="w-3.5 h-3.5 text-[#ed6425]" />
+                Feedback — {fb.length} {fb.length === 1 ? 'respons' : 'responses'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 space-y-5">
+
+              {/* Gemiddelde scores */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Gemiddelde scores (op 5)</p>
+                {[
+                  { label: 'Organisatie', value: avg1 },
+                  { label: 'Locatie & faciliteiten', value: avg2 },
+                  { label: 'Inhoud', value: avg3 },
+                ].map(({ label, value }) => value && (
+                  <div key={label} className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-slate-600 w-36 flex-shrink-0">{label}</span>
+                    <ScoreBar score={parseFloat(value)} />
+                  </div>
+                ))}
+              </div>
+
+              <Separator />
+
+              {/* Kwalitatieve antwoorden */}
+              {['wat_kon_beter', 'favo_onderdeel', 'andere_opmerkingen'].some(
+                key => fb.some(f => f[key as keyof typeof f])
+              ) && (
+                <div className="space-y-4">
+                  {[
+                    { key: 'wat_kon_beter', label: 'Wat kon beter?' },
+                    { key: 'favo_onderdeel', label: 'Favoriet onderdeel' },
+                    { key: 'andere_opmerkingen', label: 'Andere opmerkingen' },
+                  ].map(({ key, label }) => {
+                    const answers = fb
+                      .map(f => f[key as keyof typeof f] as string)
+                      .filter(Boolean);
+                    if (!answers.length) return null;
+                    return (
+                      <div key={key}>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">{label}</p>
+                        <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                          {answers.map((ans, i) => (
+                            <div key={i} className="text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 leading-relaxed">
+                              {ans}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+            </CardContent>
+          </Card>
+        );
+      })()}
     </div>
   );
 }

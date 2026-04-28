@@ -145,6 +145,7 @@ export default function EvenementenPage() {
           onNewEvent={handleNewEvent}
           onOpenEvent={handleOpenEvent}
           onAdvanceStatus={handleRequestAdvance}
+          onRevertStatus={handleRequestAdvance}
         />
 
         <NewEventDialog
@@ -168,6 +169,9 @@ export default function EvenementenPage() {
             onAddManualRegistration={mutations.addManualRegistration}
             onAddManualFeedback={mutations.addManualFeedback}
             loading={mutations.loading}
+            onImportFromTicketTailorAPI={(eventId, ttEventId) =>
+              mutations.importFromTicketTailorAPI(eventId, ttEventId)
+            }
           />
         )}
 

@@ -31,7 +31,7 @@ export function useEvents(academicYearId?: string) {
           event_sprekers(*),
           event_materiaal(*),
           registrations(id),
-          feedback(id),
+          feedback(*),
           event_domains(domain_id, domains(*))
         `)
         .eq('academic_year_id', academicYearId)
@@ -283,15 +283,16 @@ export function useEventMutations() {
       const rows = registrations.map((r) => ({
         event_id: eventId,
         bron: 'tally',
-        email: r.email,
-        voornaam: r.first_name?.trim(),
-        achternaam: r.last_name?.trim(),
-        naam: `${r.first_name?.trim()} ${r.last_name?.trim()}`,
-        faculteit: r.faculty,
-        studiejaar: r.level_of_education,
-        hoe_gevonden: r.activity_encounter,
-        ingediend_op: r.submitted_at,
+        email: r.email || null,
+        voornaam: r.first_name?.trim() || null,
+        achternaam: r.last_name?.trim() || null,
+        naam: `${r.first_name?.trim()} ${r.last_name?.trim()}`.trim() || null,
+        faculteit: r.faculty || null,
+        studiejaar: r.level_of_education || null,
+        hoe_gevonden: r.activity_encounter || null,
+        ingediend_op: r.submitted_at || null,
         checked_in: false,
+        study_program: r.study_program || null,
       }));
 
       const { error } = await supabase.from('registrations').insert(rows);
@@ -312,19 +313,36 @@ export function useEventMutations() {
     setLoading(true);
     setError(null);
     try {
-      const rows = registrations.map((r) => ({
-        event_id: eventId,
-        bron: 'tickettailor',
-        email: r.email_address,
-        naam: r.name,
-        faculteit: r.faculteit,
-        hoe_gevonden: r.hoe_gevonden,
-        studiejaar: r.studiejaar,
-        checked_in: r.checked_in?.toLowerCase() === 'yes',
-      }));
+      const rows = registrations.map((r) => {
+        const row: Record<string, any> = {
+          event_id: eventId,
+          bron: 'ticket_tailor',
+          checked_in: r.checked_in === 'Yes' || r.checked_in === 'true',
+        };
 
-      const { error } = await supabase.from('registrations').insert(rows);
-      if (error) throw error;
+        if (r.ticket_code)   row.ticket_code   = r.ticket_code;
+        if (r.name)          row.naam          = r.name;
+        if (r.email_address) row.email         = r.email_address;
+        if (r.faculteit)     row.faculteit     = r.faculteit;
+        if (r.hoe_gevonden)  row.hoe_gevonden  = r.hoe_gevonden;
+        if (r.studiejaar)    row.studiejaar    = r.studiejaar;
+        if (r.ingediend_op)  row.ingediend_op  = r.ingediend_op;
+        if (r.ingeschreven_op) row.ingeschreven_op = r.ingeschreven_op;
+        if (r.study_program) row.study_program = r.study_program;
+        return row;
+      });
+
+      const { error } = await supabase
+        .from('registrations')
+        .upsert(rows, {
+          onConflict: 'event_id,ticket_code',
+          ignoreDuplicates: false, 
+        });
+
+      if (error) {
+        console.error('Supabase error:', error.message, error.details, error.hint);
+        throw error;
+      }
       return true;
     } catch (err: any) {
       setError(err.message);
@@ -343,13 +361,13 @@ export function useEventMutations() {
     try {
       const rows = feedbackItems.map((f) => ({
         event_id: eventId,
-        email: f.email,
+        email: f.email || null,
         schaal_1: f.vraag_1 ? Number(f.vraag_1) : null,
         schaal_2: f.vraag_2 ? Number(f.vraag_2) : null,
         schaal_3: f.vraag_3 ? Number(f.vraag_3) : null,
-        wat_kon_beter: f.wat_kon_beter,
-        favo_onderdeel: f.favo_onderdeel,
-        andere_opmerkingen: f.andere_opmerkingen,
+        wat_kon_beter: f.wat_kon_beter || null,
+        favo_onderdeel: f.favo_onderdeel || null,
+        andere_opmerkingen: f.andere_opmerkingen || null,
       }));
 
       const { error } = await supabase.from('feedback').insert(rows);
@@ -407,6 +425,58 @@ export function useEventMutations() {
     }
   };
 
+  const importFromTicketTailorAPI = async (
+    eventId: string,
+    ticketTailorEventId: string
+  ): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('tickettailor-proxy', {
+        body: { eventId: ticketTailorEventId },
+      });
+
+      if (fnError) throw fnError;
+
+      const allTickets = data.data;
+      
+      const rows = allTickets.map((t: any) => {
+        const questions = t.custom_questions || [];
+        const getAnswer = (q: string) =>
+          questions.find((a: any) =>
+            a.question?.toLowerCase().includes(q.toLowerCase())
+          )?.answer || null;
+
+        return {
+          event_id: eventId,
+          bron: 'ticket_tailor',
+          ticket_code: t.barcode || null,
+          naam: t.full_name || null,
+          email: t.email || null,
+          checked_in: t.checked_in === 'true',
+          faculteit: getAnswer('faculteit') || null,
+          hoe_gevonden: getAnswer('gevonden') || getAnswer('via') || null,
+          studiejaar: getAnswer('studiejaar') || null,
+          ingediend_op: t.created_at          
+            ? new Date(t.created_at * 1000).toISOString()  
+            : null,
+        };
+      });
+
+      const { error } = await supabase
+        .from('registrations')
+        .upsert(rows, { onConflict: 'event_id,ticket_code', ignoreDuplicates: false });
+
+      if (error) throw error;
+      return true;
+    } catch (err: any) {
+      setError(err.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     error,
@@ -419,5 +489,6 @@ export function useEventMutations() {
     importFeedback,
     addManualRegistration,
     addManualFeedback,
+    importFromTicketTailorAPI,
   };
 }

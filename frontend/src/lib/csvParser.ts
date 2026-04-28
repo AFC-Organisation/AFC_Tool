@@ -5,12 +5,21 @@ import type {
 } from '../types/event';
 
 function parseCSV(text: string): Record<string, string>[] {
-  const lines = text.trim().split('\n');
+  const cleaned = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = cleaned.trim().split('\n').filter((l) => l.replace(/,/g, '').trim() !== ''); // ← skip blank/empty rows
+
   if (lines.length < 2) return [];
 
-  const headers = parseCSVLine(lines[0]).map((h) =>
+  const rawHeaders = parseCSVLine(lines[0]).map((h) =>
     h.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
   );
+
+  const seenHeaders = new Set<string>();
+  const headers = rawHeaders.map((h) => {
+    if (seenHeaders.has(h)) return `__skip_${seenHeaders.size}`;
+    seenHeaders.add(h);
+    return h;
+  });
 
   return lines.slice(1).map((line) => {
     const values = parseCSVLine(line);
@@ -83,6 +92,7 @@ export function parseTicketTailorCSV(text: string): TicketTailorRegistration[] {
     group_ticket_code: r['group_ticket_code'] || '',
     faculteit: r['faculteit'] || '',
     hoe_gevonden: r['hoe_heb_je_deze_activiteit_gevonden_via'] || r['hoe_gevonden'] || '',
+    study_program: r['studierichting'] || r['study_program'] || '',
     studiejaar: r['studiejaar'] || '',
     buyer_name: r['buyer_name'] || '',
     email_address: r['email_address'] || r['email'] || '',
@@ -116,19 +126,31 @@ export function parseTicketTailorHTML(html: string): Partial<TicketTailorRegistr
     const cells = row.querySelectorAll('td');
     if (cells.length >= 4) {
       const checkedInSvg = cells[5]?.querySelector('svg title')?.textContent || '';
+      
+
+      const ticketCode = cells[0]?.querySelector('a')?.textContent?.trim() || '';
+      
+      const issuedRaw = cells[4]?.textContent?.trim() || '';
+
       result.push({
-        ticket_code: cells[0]?.textContent?.trim() || '',
+        ticket_code: ticketCode,
         ticket_type: cells[1]?.textContent?.trim() || '',
         name: cells[2]?.textContent?.trim() || '',
         order_id: cells[3]?.textContent?.trim() || '',
+        ingeschreven_op: parseTicketTailorDate(issuedRaw), // ← date kolom
         checked_in: checkedInSvg.includes('Checked in') ? 'Yes' : 'No',
       });
-    }
+          }
   });
 
   return result;
 }
-
+function parseTicketTailorDate(raw: string): string | undefined {
+  if (!raw) return undefined;
+  const date = new Date(raw);
+  if (isNaN(date.getTime())) return undefined;
+  return date.toISOString().split('T')[0]; // "2026-02-25"
+}
 export function readFileAsText(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

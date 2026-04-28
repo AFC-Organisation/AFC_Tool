@@ -1,6 +1,6 @@
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Users, ChevronRight, ArrowRight } from 'lucide-react';
+import { Calendar, MapPin, Users, ChevronRight, ArrowRight,ArrowLeft  } from 'lucide-react';
 import { EventStatusBadge } from './EventStatusBadge';
 import { EventTypeBadge } from './EventTypeBadge';
 import type { Event, EventStatus } from '../../../types/event';
@@ -12,9 +12,10 @@ interface EventCardProps {
   event: Event;
   onOpen: (event: Event) => void;
   onAdvanceStatus: (event: Event, newStatus: EventStatus) => void;
+  onRevertStatus?: () => void;
 }
 
-export function EventCard({ event, onOpen, onAdvanceStatus }: EventCardProps) {
+export function EventCard({ event, onOpen, onAdvanceStatus,onRevertStatus }: EventCardProps) {
   const nextStatus = getNextStatus(event.status);
   const regCount = event.registraties?.length ?? 0;
   const editable = isEditable(event.status);
@@ -70,6 +71,7 @@ export function EventCard({ event, onOpen, onAdvanceStatus }: EventCardProps) {
           {editable ? 'Bewerken' : 'Bekijken'}
           <ChevronRight className="w-3 h-3 ml-1" />
         </Button>
+
         {nextStatus && (
           <Button
             size="sm"
@@ -78,6 +80,18 @@ export function EventCard({ event, onOpen, onAdvanceStatus }: EventCardProps) {
           >
             <ArrowRight className="w-3 h-3 mr-1" />
             {EVENT_STATUS_LABELS[nextStatus]}
+          </Button>
+        )}
+
+        {onRevertStatus && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="px-2 border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+            onClick={(e) => { e.stopPropagation(); onRevertStatus(); }}
+            title="Status terugzetten"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
           </Button>
         )}
       </CardFooter>

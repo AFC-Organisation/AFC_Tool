@@ -29,6 +29,7 @@ interface EventsOverviewProps {
   onNewEvent: () => void;
   onOpenEvent: (event: Event) => void;
   onAdvanceStatus: (event: Event, newStatus: EventStatus) => void;
+  onRevertStatus: (event: Event, prevStatus: EventStatus) => void;
 }
 
 const typeIcons: Record<EventType, React.ComponentType<any>> = {
@@ -94,6 +95,7 @@ export function EventsOverview({
   onNewEvent,
   onOpenEvent,
   onAdvanceStatus,
+  onRevertStatus,
 }: EventsOverviewProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -105,6 +107,11 @@ export function EventsOverview({
     const matchStatus = statusFilter === 'all' || e.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  const getPreviousStatus = (status: EventStatus): EventStatus | null => {
+    const idx = STATUS_ORDER.indexOf(status);
+    return idx > 0 ? STATUS_ORDER[idx - 1] : null;
+  };
 
   const statCounts = {
     total: events.length,
@@ -234,14 +241,18 @@ export function EventsOverview({
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                {typeEvents.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    onOpen={onOpenEvent}
-                    onAdvanceStatus={onAdvanceStatus}
-                  />
-                ))}
+                {typeEvents.map((event) => {
+                  const prevStatus = getPreviousStatus(event.status);
+                  return (
+                    <EventCard
+                      key={event.id}
+                      event={event}
+                      onOpen={onOpenEvent}
+                      onAdvanceStatus={onAdvanceStatus}
+                      onRevertStatus={prevStatus ? () => onRevertStatus(event, prevStatus) : undefined} // ← nieuw
+                    />
+                  );
+                })}
               </div>
             )}
           </section>

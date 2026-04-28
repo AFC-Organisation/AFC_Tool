@@ -40,6 +40,7 @@ interface DataUploadFormProps {
   onAddManualFeedback: (data: Partial<Feedback>) => Promise<boolean>;
   onMarkComplete: () => void;
   loading?: boolean;
+  onImportFromTicketTailorAPI: (ticketTailorEventId: string) => Promise<boolean>;
 }
 
 interface UploadState {
@@ -62,6 +63,7 @@ export function DataUploadForm({
   onAddManualFeedback,
   onMarkComplete,
   loading,
+  onImportFromTicketTailorAPI,
 }: DataUploadFormProps) {
   const [tallyState, setTallyState] = useState<UploadState>({ status: 'idle' });
   const [ttState, setTtState] = useState<UploadState>({ status: 'idle' });
@@ -73,12 +75,19 @@ export function DataUploadForm({
     email: '', schaal_1: '', schaal_2: '', schaal_3: '',
     wat_kon_beter: '', favo_onderdeel: '', andere_opmerkingen: '',
   });
+  const [ttEventId, setTtEventId] = useState('');
 
   const tallyRef = useRef<HTMLInputElement>(null);
   const ttCsvRef = useRef<HTMLInputElement>(null);
   const ttHtmlRef = useRef<HTMLInputElement>(null);
   const feedbackRef = useRef<HTMLInputElement>(null);
 
+  const handleAPIImport = async () => {
+    setTtState({ status: 'loading' });
+    const ok = await onImportFromTicketTailorAPI(ttEventId);
+    setTtState(ok ? { status: 'success' } : { status: 'error', message: 'API import mislukt' });
+  };
+  
   const handleTallyUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -166,7 +175,7 @@ export function DataUploadForm({
 
       {/* Registraties upload */}
       <Card className="border-slate-200 shadow-sm overflow-hidden">
-        <CardHeader className="pb-3 pt-4 px-4 bg-[#041c3a]/5 border-b border-slate-100">
+        <CardHeader className="pb-2 pt-4 px-4 border-b border-slate-100">
           <CardTitle className="text-xs font-bold uppercase tracking-wider text-[#041c3a] flex items-center gap-2">
             <Upload className="w-3.5 h-3.5 text-[#ed6425]" />
             Inschrijvingen importeren
@@ -251,6 +260,25 @@ export function DataUploadForm({
               </div>
               <input ref={ttCsvRef} type="file" accept=".csv" className="hidden" onChange={handleTTCsvUpload} />
               <input ref={ttHtmlRef} type="file" accept=".html,.htm" className="hidden" onChange={handleTTHtmlUpload} />
+              <div className="space-y-2">
+              <Label className={labelClass}>TicketTailor Event ID</Label>
+              <Input
+                placeholder="ev_..."
+                value={ttEventId}
+                onChange={(e) => setTtEventId(e.target.value)}
+                className={inputClass}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAPIImport}
+                disabled={!ttEventId || ttState.status === 'loading'}
+                className="border-[#041c3a]/20 text-[#041c3a] hover:bg-[#041c3a] hover:text-white text-xs"
+              >
+                Via API importeren
+              </Button>
+            </div>
             </TabsContent>
           </Tabs>
 
@@ -271,7 +299,7 @@ export function DataUploadForm({
 
       {/* Feedback upload */}
       <Card className="border-slate-200 shadow-sm overflow-hidden">
-        <CardHeader className="pb-3 pt-4 px-4 bg-[#041c3a]/5 border-b border-slate-100">
+        <CardHeader className="pb-2 pt-4 px-4 border-b border-slate-100">
           <CardTitle className="text-xs font-bold uppercase tracking-wider text-[#041c3a] flex items-center gap-2">
             <MessageSquarePlus className="w-3.5 h-3.5 text-[#ed6425]" />
             Feedback importeren

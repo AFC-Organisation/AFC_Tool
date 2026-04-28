@@ -148,9 +148,12 @@ export interface TicketTailorRegistration {
   group_ticket_code?: string;
   faculteit?: string;
   hoe_gevonden?: string;
+  study_program?: string;
   studiejaar?: string;
   buyer_name?: string;
   email_address: string;
+  ingediend_op?: string;
+  ingeschreven_op?: string;
 }
 
 export interface FeedbackImport {

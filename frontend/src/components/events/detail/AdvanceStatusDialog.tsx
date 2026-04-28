@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ArrowRight } from 'lucide-react';
 import type { Event, EventStatus } from '../../../types/event';
-import { EVENT_STATUS_LABELS } from '../../../types/event';
+import { EVENT_STATUS_LABELS, STATUS_ORDER } from '../../../types/event';
 
 interface AdvanceStatusDialogProps {
   event: Event | null;
@@ -27,7 +27,12 @@ const statusMessages: Record<EventStatus, string> = {
   afgerond: 'Het evenement heeft plaatsgevonden. Je kan nu data uploaden.',
   compleet: 'Alle data is verwerkt. Het evenement wordt als compleet gemarkeerd.',
 };
-
+const revertMessages: Record<EventStatus, string> = {
+  concept: 'Het evenement wordt teruggeplaatst naar concept.',
+  voorbereid: 'Het evenement wordt teruggeplaatst naar voorbereid.',
+  afgerond: 'Het evenement wordt teruggeplaatst naar afgerond.',
+  compleet: '',
+};
 const statusColors: Record<EventStatus, string> = {
   concept: 'bg-slate-100 text-slate-700',
   voorbereid: 'bg-[#041c3a]/10 text-[#041c3a]',
@@ -43,6 +48,11 @@ export function AdvanceStatusDialog({
   onCancel,
   loading,
 }: AdvanceStatusDialogProps) {
+  const isRevert = event && newStatus
+    ? STATUS_ORDER.indexOf(newStatus) < STATUS_ORDER.indexOf(event.status)
+    : false;
+
+
   if (!event || !newStatus) return null;
 
   return (
@@ -63,11 +73,12 @@ export function AdvanceStatusDialog({
             </AlertDialogTitle>
             <AlertDialogDescription className="text-slate-600 leading-relaxed">
               Je staat op het punt om{' '}
-              <span className="font-semibold text-[#041c3a]">{event.titel}</span> te verplaatsen naar{' '}
+              <span className="font-semibold text-[#041c3a]">{event.titel}</span> te{' '}
+              {isRevert ? 'terugzetten naar' : 'verplaatsen naar'}{' '}
               <span className="font-semibold text-[#ed6425]">{EVENT_STATUS_LABELS[newStatus]}</span>.
               <br />
               <br />
-              {statusMessages[newStatus]}
+              {isRevert ? revertMessages[newStatus] : statusMessages[newStatus]}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -82,10 +93,19 @@ export function AdvanceStatusDialog({
             <AlertDialogAction
               onClick={onConfirm}
               disabled={loading}
-              className="bg-[#041c3a] hover:bg-[#041c3a]/90 text-white gap-2"
+              className={
+                isRevert
+                  ? 'bg-slate-600 hover:bg-slate-700 text-white gap-2'
+                  : 'bg-[#041c3a] hover:bg-[#041c3a]/90 text-white gap-2'
+              }
             >
               {loading ? (
                 'Bezig...'
+              ) : isRevert ? (
+                <>
+                  Terugzetten
+                  <ArrowRight className="w-4 h-4 rotate-180" />  {/* pijl omgekeerd */}
+                </>
               ) : (
                 <>
                   Bevestigen

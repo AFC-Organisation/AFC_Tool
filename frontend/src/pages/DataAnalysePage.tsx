@@ -23,6 +23,14 @@ import { YearComparisonChart } from '../components/analytics/YearComparisonChart
 import { StrategicInsights } from '../components/analytics/StrategicInsights';
 import { ChartCard } from '../components/analytics/ChartCard';
 
+// ── NEW IMPORTS ────────────────────────────────────────────────────────────────
+import { LoyaltyChart } from '../components/analytics/Loyaltychart';
+import { RegistrationTimingChart } from '../components/analytics/Registrationtimingchart ';
+import { FunFactsGrid } from '../components/analytics/Funfactsgrid ';
+import { UniqueAttendeesChart } from '../components/analytics/Uniqueattendeeschart ';
+import { EmailDomainChart } from '../components/analytics/Emaildomainchart';
+import { StudyProgramChart } from '../components/analytics/StudyProgramChart';
+
 import {
   computeKPIs,
   computeFacultyDistribution,
@@ -31,6 +39,13 @@ import {
   computeSourceDistribution,
   computeEventCheckInRates,
   generateInsights,
+  // ── NEW UTILS ──
+  computeLoyaltyData,
+  computeTimingData,
+  computeUniqueAttendeesData,
+  computeFunFacts,
+  computeEmailDomains,
+  computeStudyProgramDistribution,
 } from '../lib/analyticsUtils';
 
 export default function DataAnalysePage() {
@@ -50,18 +65,28 @@ export default function DataAnalysePage() {
     refetch,
   } = useAnalytics();
 
-  // All analytics are computed from filtered events
-  const kpis = useMemo(() => computeKPIs(events), [events]);
+  // ── Existing computed data ──────────────────────────────────────────────────
+  const kpis        = useMemo(() => computeKPIs(events), [events]);
   const facultyData = useMemo(() => computeFacultyDistribution(events, 10), [events]);
-  const howFoundData = useMemo(() => computeHowFoundDistribution(events), [events]);
-  const studyYearData = useMemo(() => computeStudyYearDistribution(events), [events]);
-  const sourceData = useMemo(() => computeSourceDistribution(events), [events]);
+  const howFoundData= useMemo(() => computeHowFoundDistribution(events), [events]);
+  const studyYearData=useMemo(() => computeStudyYearDistribution(events), [events]);
+  const sourceData  = useMemo(() => computeSourceDistribution(events), [events]);
   const checkInData = useMemo(() => computeEventCheckInRates(events), [events]);
-  const insights = useMemo(() => generateInsights(events, kpis), [events, kpis]);
+  const insights    = useMemo(() => generateInsights(events, kpis), [events, kpis]);
+
+  // ── NEW computed data ───────────────────────────────────────────────────────
+  const loyaltyData   = useMemo(() => computeLoyaltyData(events), [events]);
+  const timingData    = useMemo(() => computeTimingData(events), [events]);
+  const uniqueData    = useMemo(() => computeUniqueAttendeesData(events), [events]);
+  const funFacts      = useMemo(() => computeFunFacts(events, loyaltyData, timingData), [events, loyaltyData, timingData]);
+  const emailDomains  = useMemo(() => computeEmailDomains(events), [events]);
+  const studyProgramData = useMemo(() => computeStudyProgramDistribution(events, 20),[events]);
 
   const hasData = !loading && events.length > 0;
   const hasNoEvents = !loading && !error && allEvents.length === 0;
   const hasNoFilteredEvents = !loading && !error && allEvents.length > 0 && events.length === 0;
+
+
 
   return (
     <AppLayout title="Data Analyse" subtitle="Strategisch inzicht per academiejaar">
@@ -89,7 +114,6 @@ export default function DataAnalysePage() {
 
         {/* ── Filters ─────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Year selector */}
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-slate-500 whitespace-nowrap">Academiejaar</span>
             {yearsLoading ? (
@@ -119,7 +143,6 @@ export default function DataAnalysePage() {
 
           <div className="w-px h-6 bg-slate-200" />
 
-          {/* Event type tabs */}
           <EventTypeFilterTabs
             selected={selectedEventType}
             onChange={setSelectedEventType}
@@ -158,60 +181,75 @@ export default function DataAnalysePage() {
               <p className="text-sm font-medium text-red-700">Fout bij laden</p>
               <p className="text-xs text-red-500 mt-0.5">{error}</p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => refetch?.()}
-              className="text-red-600 hover:text-red-700"
-            >
+            <Button variant="ghost" size="sm" onClick={() => refetch?.()} className="text-red-600 hover:text-red-700">
               <RefreshCw className="h-4 w-4 mr-1" /> Opnieuw
             </Button>
           </div>
         )}
 
-        {/* ── Empty state — no completed events ───────────────────────── */}
+        {/* ── Empty states ─────────────────────────────────────────────── */}
         {hasNoEvents && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="h-16 w-16 rounded-2xl bg-[#041c3a]/5 border border-[#041c3a]/10 flex items-center justify-center mb-4">
               <BarChart2 className="h-8 w-8 text-[#041c3a]/30" />
             </div>
-            <h3 className="text-base font-semibold text-[#041c3a] mb-1">
-              Geen afgeronde evenementen
-            </h3>
+            <h3 className="text-base font-semibold text-[#041c3a] mb-1">Geen afgeronde evenementen</h3>
             <p className="text-sm text-slate-400">
-              Analyse is enkel beschikbaar voor evenementen met status{' '}
-              <strong>compleet</strong>.
+              Analyse is enkel beschikbaar voor evenementen met status <strong>compleet</strong>.
             </p>
           </div>
         )}
 
-        {/* ── No events for filter ─────────────────────────────────────── */}
         {hasNoFilteredEvents && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-sm text-slate-400">
-              Geen afgeronde{' '}
-              <strong>{selectedEventType}</strong>-evenementen in dit academiejaar.
+              Geen afgeronde <strong>{selectedEventType}</strong>-evenementen in dit academiejaar.
             </p>
           </div>
         )}
 
-        {/* ── Main analytics content ───────────────────────────────────── */}
+        {/* ══════════════════════════════════════════════════════════════
+            MAIN ANALYTICS CONTENT
+        ══════════════════════════════════════════════════════════════ */}
         {hasData && (
           <div className="space-y-6">
 
-            {/* KPI Cards */}
+            {/* ── KPI Cards ─────────────────────────────────────────────── */}
             <AnalyticsKPICards kpis={kpis} />
 
-            {/* Strategic Insights */}
+            {/* ── 🎉 Fun Facts ──────────────────────────────────────────── */}
+            {funFacts.length > 0 && (
+              <div>
+                <SectionHeader emoji="🎉" title="Leuke feiten & recordhouders" />
+                <FunFactsGrid facts={funFacts} />
+              </div>
+            )}
+
+            {/* ── 💡 Strategic Insights ─────────────────────────────────── */}
             <div>
-              <h2 className="text-sm font-semibold text-[#041c3a] mb-3 flex items-center gap-2">
-                <span className="h-1 w-4 rounded-full bg-[#ed6425] inline-block" />
-                Strategische inzichten
-              </h2>
+              <SectionHeader emoji="💡" title="Strategische inzichten" />
               <StrategicInsights insights={insights} />
             </div>
 
-            {/* Check-in rates per event */}
+            {/* ── 👥 Unieke bezoekers & groei ───────────────────────────── */}
+            <ChartCard
+              title="Unieke bezoekers & bereik"
+              subtitle="Hoeveel unieke mensen bereiken we, en hoe groeien die over evenementen heen"
+              badge={`${uniqueData.totalUnique} uniek`}
+            >
+              <UniqueAttendeesChart data={uniqueData} />
+            </ChartCard>
+
+            {/* ── 🏆 Loyaliteit & superfans ────────────────────────────── */}
+            <ChartCard
+              title="Loyaliteit & superfans"
+              subtitle="Hoeveel evenementen bezocht elke persoon? Wie zijn onze trouwste fans?"
+              badge={`${loyaltyData.totalUnique} bezoekers`}
+            >
+              <LoyaltyChart data={loyaltyData} />
+            </ChartCard>
+
+            {/* ── ✅ Check-in rate per event ────────────────────────────── */}
             <ChartCard
               title="Check-in rate per evenement"
               subtitle="Percentage ingeschreven deelnemers dat effectief aanwezig was"
@@ -220,7 +258,15 @@ export default function DataAnalysePage() {
               <CheckInRateChart data={checkInData} />
             </ChartCard>
 
-            {/* 2-col row: Faculty + How Found */}
+            {/* ── 🕐 Inschrijfgedrag & timing ──────────────────────────── */}
+            <ChartCard
+              title="Wanneer schrijven mensen zich in?"
+              subtitle="Uur van de dag, dag van de week, en hoe ver op voorhand"
+            >
+              <RegistrationTimingChart data={timingData} />
+            </ChartCard>
+
+            {/* ── 2-col: Faculty + How Found ────────────────────────────── */}
             <div className="grid gap-4 lg:grid-cols-2">
               <ChartCard
                 title="Faculteitsverdeling"
@@ -237,8 +283,15 @@ export default function DataAnalysePage() {
                 <HowFoundChart data={howFoundData} />
               </ChartCard>
             </div>
+            <ChartCard
+              title="Opleidingen"
+              subtitle="Welke studierichtingen schrijven zich het meest in"
+              badge={`${studyProgramData.length} opleidingen`}
+            >
+              <StudyProgramChart data={studyProgramData} />
+            </ChartCard>
 
-            {/* 2-col row: Study year + Source */}
+            {/* ── 2-col: Study Year + Source ────────────────────────────── */}
             <div className="grid gap-4 lg:grid-cols-2">
               <ChartCard
                 title="Studiejaar verdeling"
@@ -255,7 +308,16 @@ export default function DataAnalysePage() {
               </ChartCard>
             </div>
 
-            {/* Year comparison — always shows all years */}
+            {/* ── 📧 E-maildomeinen ─────────────────────────────────────── */}
+            <ChartCard
+              title="E-maildomeinen"
+              subtitle="Welke e-maildomeinen gebruiken onze deelnemers? Uni vs. privé"
+              badge={`${emailDomains.length} domeinen`}
+            >
+              <EmailDomainChart data={emailDomains} />
+            </ChartCard>
+
+            {/* ── 📊 Year comparison ────────────────────────────────────── */}
             <ChartCard
               title="Vergelijking over academiejaren"
               subtitle="Inschrijvingen en aanwezigheid per academiejaar (alle afgeronde evenementen)"
@@ -271,5 +333,16 @@ export default function DataAnalysePage() {
         )}
       </div>
     </AppLayout>
+  );
+}
+
+// ── Helper ────────────────────────────────────────────────────────────────────
+function SectionHeader({ emoji, title }: { emoji: string; title: string }) {
+  return (
+    <h2 className="text-sm font-semibold text-[#041c3a] mb-3 flex items-center gap-2">
+      <span className="text-base">{emoji}</span>
+      <span>{title}</span>
+      <span className="h-px flex-1 bg-slate-100" />
+    </h2>
   );
 }

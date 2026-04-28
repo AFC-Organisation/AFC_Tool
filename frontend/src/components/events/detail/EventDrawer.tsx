@@ -24,6 +24,8 @@ interface EventDrawerProps {
   onAddManualRegistration: (eventId: string, data: any) => Promise<boolean>;
   onAddManualFeedback: (eventId: string, data: any) => Promise<boolean>;
   loading?: boolean;
+  onImportFromTicketTailorAPI: (eventId: string, ttEventId: string) => Promise<boolean>;
+
 }
 
 export function EventDrawer({
@@ -39,6 +41,7 @@ export function EventDrawer({
   onAddManualRegistration,
   onAddManualFeedback,
   loading,
+  onImportFromTicketTailorAPI,
 }: EventDrawerProps) {
   const editable = isEditable(event.status);
   const nextStatus = getNextStatus(event.status);
@@ -174,6 +177,7 @@ export function EventDrawer({
                 onAddManualFeedback={(data) => onAddManualFeedback(event.id, data)}
                 onMarkComplete={handleAdvance}
                 loading={loading}
+                onImportFromTicketTailorAPI={(ttEventId) => onImportFromTicketTailorAPI(event.id, ttEventId)}
               />
             </div>
           )}
