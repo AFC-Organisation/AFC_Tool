@@ -24,10 +24,10 @@ import { StrategicInsights } from '../components/analytics/StrategicInsights';
 import { ChartCard } from '../components/analytics/ChartCard';
 
 // ── NEW IMPORTS ────────────────────────────────────────────────────────────────
-import { LoyaltyChart } from '../components/analytics/Loyaltychart';
-import { RegistrationTimingChart } from '../components/analytics/Registrationtimingchart ';
-import { FunFactsGrid } from '../components/analytics/Funfactsgrid ';
-import { UniqueAttendeesChart } from '../components/analytics/Uniqueattendeeschart ';
+import { LoyaltyChart } from '../components/analytics/LoyaltyChart';
+import { RegistrationTimingChart } from '../components/analytics/RegistrationTimingChart';
+import { FunFactsGrid } from '../components/analytics/FunFactsGrid';
+import { UniqueAttendeesChart } from '../components/analytics/UniqueAttendeesChart';
 import { EmailDomainChart } from '../components/analytics/Emaildomainchart';
 import { StudyProgramChart } from '../components/analytics/Studyprogramchart';
 
