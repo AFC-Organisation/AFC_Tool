@@ -28,7 +28,7 @@ import { LoyaltyChart } from '../components/analytics/Loyaltychart';
 import { RegistrationTimingChart } from '../components/analytics/Registrationtimingchart ';
 import { FunFactsGrid } from '../components/analytics/Funfactsgrid ';
 import { UniqueAttendeesChart } from '../components/analytics/Uniqueattendeeschart ';
-import { EmailDomainChart } from '../components/analytics/Emaildomainchart';
+import { EmailDomainChart } from '../components/analytics/Emaildomainchart'
 import { StudyProgramChart } from '../components/analytics/Studyprogramchart';
 
 import {
