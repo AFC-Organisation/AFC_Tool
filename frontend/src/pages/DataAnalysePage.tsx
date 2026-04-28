@@ -28,8 +28,8 @@ import { LoyaltyChart } from '../components/analytics/LoyaltyChart';
 import { RegistrationTimingChart } from '../components/analytics/RegistrationTimingChart';
 import { FunFactsGrid } from '../components/analytics/FunFactsGrid';
 import { UniqueAttendeesChart } from '../components/analytics/UniqueAttendeesChart';
-import { EmailDomainChart } from '../components/analytics/Emaildomainchart';
-import { StudyProgramChart } from '../components/analytics/Studyprogramchart';
+import { EmailDomainChart } from '../components/analytics/EmailDomainChart';
+import { StudyProgramChart } from '../components/analytics/StudyProgramChart';
 
 import {
   computeKPIs,
