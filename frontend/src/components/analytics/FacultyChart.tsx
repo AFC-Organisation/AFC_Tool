@@ -27,11 +27,17 @@ const COLORS = [
   '#6366f1',
 ];
 
+// Truncate long faculty names to avoid overflow
+function truncate(label: string, maxLen = 28): string {
+  return label.length > maxLen ? label.slice(0, maxLen - 1) + '…' : label;
+}
+
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload?.length) {
     return (
-      <div className="bg-[#041c3a] text-white text-xs rounded-lg px-3 py-2 shadow-lg">
-        <p className="font-semibold">{payload[0]?.payload?.label}</p>
+      <div className="bg-[#041c3a] text-white text-xs rounded-lg px-3 py-2 shadow-lg max-w-[220px]">
+        {/* Show full untruncated label in tooltip */}
+        <p className="font-semibold break-words">{payload[0]?.payload?.label}</p>
         <p className="text-slate-300">
           {payload[0]?.value} inschrijvingen ({payload[0]?.payload?.percentage}%)
         </p>
@@ -50,18 +56,24 @@ export function FacultyChart({ data }: FacultyChartProps) {
     );
   }
 
+  // Each bar gets 36px height + 16px padding at top/bottom
+  const chartHeight = data.length * 36 + 16;
+
+  // Truncate labels for the axis — full label still shows in tooltip
+  const displayData = data.map((d) => ({
+    ...d,
+    displayLabel: truncate(d.label),
+  }));
+
   return (
-    <ResponsiveContainer width="100%" height={280}>
+    <ResponsiveContainer width="100%" height={chartHeight}>
       <BarChart
-        data={data}
+        data={displayData}
         layout="vertical"
-        margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
+        margin={{ top: 8, right: 16, left: 0, bottom: 8 }}
+        barCategoryGap="25%"
       >
-        <CartesianGrid
-          strokeDasharray="3 3"
-          stroke="#e2e8f0"
-          horizontal={false}
-        />
+        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
         <XAxis
           type="number"
           tick={{ fontSize: 11, fill: '#94a3b8' }}
@@ -70,14 +82,14 @@ export function FacultyChart({ data }: FacultyChartProps) {
         />
         <YAxis
           type="category"
-          dataKey="label"
-          width={110}
+          dataKey="displayLabel"
+          width={140}
           tick={{ fontSize: 11, fill: '#475569' }}
           tickLine={false}
           axisLine={false}
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9' }} />
-        <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+        <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={24}>
           {data.map((_, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}

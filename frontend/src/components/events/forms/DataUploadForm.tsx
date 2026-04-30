@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +20,9 @@ import {
   AlertCircle,
   Users,
   MessageSquare,
+  Euro,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import type { Event, Registration, Feedback } from '../../../types/event';
 import {
@@ -41,6 +43,8 @@ interface DataUploadFormProps {
   onMarkComplete: () => void;
   loading?: boolean;
   onImportFromTicketTailorAPI: (ticketTailorEventId: string) => Promise<boolean>;
+  /** Save the financial result (can be negative) back to the events table */
+  onUpdateFinancieel: (value: number | null) => Promise<boolean>;
 }
 
 interface UploadState {
@@ -64,6 +68,7 @@ export function DataUploadForm({
   onMarkComplete,
   loading,
   onImportFromTicketTailorAPI,
+  onUpdateFinancieel,
 }: DataUploadFormProps) {
   const [tallyState, setTallyState] = useState<UploadState>({ status: 'idle' });
   const [ttState, setTtState] = useState<UploadState>({ status: 'idle' });
@@ -77,17 +82,36 @@ export function DataUploadForm({
   });
   const [ttEventId, setTtEventId] = useState('');
 
+  // Financial result state — seeded from event data
+  const [financieelInput, setFinancieelInput] = useState<string>(
+    event.financieel_resultaat != null ? String(event.financieel_resultaat) : ''
+  );
+  const [financieelSaveState, setFinancieelSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
   const tallyRef = useRef<HTMLInputElement>(null);
   const ttCsvRef = useRef<HTMLInputElement>(null);
   const ttHtmlRef = useRef<HTMLInputElement>(null);
   const feedbackRef = useRef<HTMLInputElement>(null);
+
+  const handleFinancieelSave = async () => {
+    const parsed = financieelInput === '' ? null : parseFloat(financieelInput.replace(',', '.'));
+    if (financieelInput !== '' && isNaN(parsed as number)) return;
+    setFinancieelSaveState('saving');
+    const ok = await onUpdateFinancieel(parsed);
+    setFinancieelSaveState(ok ? 'saved' : 'error');
+    setTimeout(() => setFinancieelSaveState('idle'), 2500);
+  };
+
+  const financieelValue = financieelInput === '' ? null : parseFloat(financieelInput.replace(',', '.'));
+  const isPositive = financieelValue !== null && !isNaN(financieelValue) && financieelValue >= 0;
+  const isNegative = financieelValue !== null && !isNaN(financieelValue) && financieelValue < 0;
 
   const handleAPIImport = async () => {
     setTtState({ status: 'loading' });
     const ok = await onImportFromTicketTailorAPI(ttEventId);
     setTtState(ok ? { status: 'success' } : { status: 'error', message: 'API import mislukt' });
   };
-  
+
   const handleTallyUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -172,6 +196,70 @@ export function DataUploadForm({
           <MessageSquare className="w-8 h-8 text-white/20" />
         </div>
       </div>
+
+      {/* Financial result */}
+      <Card className="border-slate-200 shadow-sm overflow-hidden">
+        <CardHeader className="pb-2 pt-4 px-4 border-b border-slate-100">
+          <CardTitle className="text-xs font-bold uppercase tracking-wider text-[#041c3a] flex items-center gap-2">
+            <Euro className="w-3.5 h-3.5 text-[#ed6425]" />
+            Financieel resultaat
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <p className="text-xs text-slate-500 mb-3">
+            Vul het totale financiële resultaat in (positief = winst, negatief = verlies).
+          </p>
+          <div className="flex items-center gap-3">
+            {/* € prefix */}
+            <div className="relative flex-1 max-w-[200px]">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold select-none">
+                €
+              </span>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={financieelInput}
+                onChange={(e) => {
+                  setFinancieelInput(e.target.value);
+                  setFinancieelSaveState('idle');
+                }}
+                onBlur={handleFinancieelSave}
+                onKeyDown={(e) => e.key === 'Enter' && handleFinancieelSave()}
+                className={`pl-7 ${inputClass} ${
+                  isNegative
+                    ? 'text-red-600 border-red-200 focus-visible:border-red-400 focus-visible:ring-red-100'
+                    : isPositive
+                    ? 'text-emerald-700 border-emerald-200 focus-visible:border-emerald-400 focus-visible:ring-emerald-100'
+                    : ''
+                }`}
+              />
+            </div>
+
+            {/* Trend icon */}
+            {isPositive && <TrendingUp className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+            {isNegative && <TrendingDown className="w-4 h-4 text-red-500 flex-shrink-0" />}
+
+            {/* Save feedback */}
+            {financieelSaveState === 'saving' && (
+              <span className="text-xs text-slate-400">Opslaan…</span>
+            )}
+            {financieelSaveState === 'saved' && (
+              <span className="flex items-center gap-1 text-xs text-emerald-600 font-semibold">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Opgeslagen
+              </span>
+            )}
+            {financieelSaveState === 'error' && (
+              <span className="flex items-center gap-1 text-xs text-red-500">
+                <AlertCircle className="w-3.5 h-3.5" /> Opslaan mislukt
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-2">
+            Gebruik een min-teken voor een negatief bedrag, bv. <span className="font-mono">-150.00</span>. Wijzigingen worden opgeslagen bij het verlaten van het veld.
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Registraties upload */}
       <Card className="border-slate-200 shadow-sm overflow-hidden">
@@ -261,24 +349,24 @@ export function DataUploadForm({
               <input ref={ttCsvRef} type="file" accept=".csv" className="hidden" onChange={handleTTCsvUpload} />
               <input ref={ttHtmlRef} type="file" accept=".html,.htm" className="hidden" onChange={handleTTHtmlUpload} />
               <div className="space-y-2">
-              <Label className={labelClass}>TicketTailor Event ID</Label>
-              <Input
-                placeholder="ev_..."
-                value={ttEventId}
-                onChange={(e) => setTtEventId(e.target.value)}
-                className={inputClass}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAPIImport}
-                disabled={!ttEventId || ttState.status === 'loading'}
-                className="border-[#041c3a]/20 text-[#041c3a] hover:bg-[#041c3a] hover:text-white text-xs"
-              >
-                Via API importeren
-              </Button>
-            </div>
+                <Label className={labelClass}>TicketTailor Event ID</Label>
+                <Input
+                  placeholder="ev_..."
+                  value={ttEventId}
+                  onChange={(e) => setTtEventId(e.target.value)}
+                  className={inputClass}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAPIImport}
+                  disabled={!ttEventId || ttState.status === 'loading'}
+                  className="border-[#041c3a]/20 text-[#041c3a] hover:bg-[#041c3a] hover:text-white text-xs"
+                >
+                  Via API importeren
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
 

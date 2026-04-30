@@ -28,14 +28,28 @@ export default function EvenementenPage() {
     newStatus: EventStatus;
   } | null>(null);
 
-  // Open dialog immediately when ?nieuw=1 is present in the URL
+  // Open "new event" dialog when ?nieuw=1
   useEffect(() => {
     if (searchParams.get('nieuw') === '1') {
       setNewEventOpen(true);
-      // Clean up the query param without adding a history entry
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
+
+  // Open drawer for a specific event when ?event=<id> is present.
+  // Wait until events have loaded so we can look up the full event object.
+  useEffect(() => {
+    const eventId = searchParams.get('event');
+    if (!eventId || loading || events.length === 0) return;
+
+    const target = events.find((e) => e.id === eventId);
+    if (target) {
+      setSelectedEvent(target);
+      setDrawerOpen(true);
+      // Clean the param without adding a history entry
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, events, loading, setSearchParams]);
 
   const handleNewEvent = () => setNewEventOpen(true);
 
@@ -128,7 +142,6 @@ export default function EvenementenPage() {
         {/* Page header */}
         <div className="mb-8">
           <div className="flex items-center gap-4">
-            {/* AFC brand accent */}
             <div className="w-1 h-10 rounded-full bg-gradient-to-b from-[#041c3a] to-[#ed6425]" />
             <div>
               <h1 className="text-2xl font-black text-[#041c3a] tracking-tight">Evenementen</h1>

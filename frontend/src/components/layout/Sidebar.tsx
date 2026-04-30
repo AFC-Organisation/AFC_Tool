@@ -30,6 +30,11 @@ const navItems = [
     href: '/academiejaren',
     icon: GraduationCap,
   },
+  {
+    label: 'Inventaris',
+    href: '/inventaris',
+    icon: GraduationCap,
+  },
 ];
 
 export function Sidebar() {
@@ -113,7 +118,7 @@ export function Sidebar() {
       <div className="px-6 py-4 border-t border-white/8">
         <div className="flex items-center gap-2">
           <div className="h-1.5 w-1.5 rounded-full bg-[#ed6425]" />
-          <p className="text-[11px] text-white/30">v0.1.0 · intern platform</p>
+          <p className="text-[11px] text-white/30">v0.2.0 · intern platform</p>
         </div>
       </div>
     </aside>

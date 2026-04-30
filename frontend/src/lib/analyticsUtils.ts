@@ -768,3 +768,134 @@ export function computeStudyProgramDistribution(
       percentage: total > 0 ? Math.round((count / total) * 100) : 0,
     }));
 }
+
+
+// ─── 1. Retention Funnel ──────────────────────────────────────────────────────
+// Shows: Registered → Checked in → Returned (attended 2+ events)
+
+export interface RetentionFunnelData {
+  stages: { label: string; count: number; percentage: number; color: string }[];
+  dropOffRegistrationToCheckIn: number;
+  dropOffCheckInToReturn: number;
+}
+
+export function computeRetentionFunnel(events: AnalyticsEvent[]): RetentionFunnelData {
+  const allRegs = events.flatMap((e) => e.registrations ?? []);
+  const totalRegistered = allRegs.length;
+  const totalCheckedIn = allRegs.filter((r) => r.checked_in).length;
+
+  // "Returned" = unique email that checked in at 2+ different events
+  const emailCheckInCounts: Record<string, number> = {};
+  for (const ev of events) {
+    const regs = ev.registrations ?? [];
+    for (const reg of regs) {
+      if (!reg.checked_in || !reg.email) continue;
+      const email = reg.email.toLowerCase().trim();
+      emailCheckInCounts[email] = (emailCheckInCounts[email] ?? 0) + 1;
+    }
+  }
+  const returned = Object.values(emailCheckInCounts).filter((c) => c >= 2).length;
+
+  const stages = [
+    { label: 'Ingeschreven',    count: totalRegistered, percentage: 100,                                                                           color: '#bfdbfe' },
+    { label: 'Aanwezig',        count: totalCheckedIn,  percentage: totalRegistered > 0 ? Math.round((totalCheckedIn / totalRegistered) * 100) : 0, color: '#ed6425' },
+    { label: 'Terugkerend',     count: returned,        percentage: totalRegistered > 0 ? Math.round((returned / totalRegistered) * 100) : 0,       color: '#041c3a' },
+  ];
+
+  return {
+    stages,
+    dropOffRegistrationToCheckIn: 100 - stages[1].percentage,
+    dropOffCheckInToReturn: stages[1].percentage - stages[2].percentage,
+  };
+}
+
+// ─── 2. Event Success Score ───────────────────────────────────────────────────
+// Composite score per event: check-in rate (50%) + capacity utilization (30%) + absolute registrations normalized (20%)
+// Useful for identifying which event formats/topics work best.
+
+export interface EventSuccessScore {
+  titel: string;
+  type: string;
+  score: number;          // 0–100
+  checkInRate: number;
+  capacityPct: number | null;
+  registrations: number;
+  grade: 'excellent' | 'good' | 'average' | 'low';
+}
+
+export function computeEventSuccessScores(events: AnalyticsEvent[]): EventSuccessScore[] {
+  if (events.length === 0) return [];
+
+  const maxRegs = Math.max(...events.map((e) => e.registrations?.length ?? 0));
+
+  return events
+    .map((e) => {
+      const regs = e.registrations ?? [];
+      const checkedIn = regs.filter((r) => r.checked_in).length;
+      const checkInRate = regs.length > 0 ? Math.round((checkedIn / regs.length) * 100) : 0;
+      const capacityPct =
+        e.max_deelnemers && e.max_deelnemers > 0
+          ? Math.min(100, Math.round((regs.length / e.max_deelnemers) * 100))
+          : null;
+      const regScore = maxRegs > 0 ? Math.round((regs.length / maxRegs) * 100) : 0;
+
+      const score =
+        checkInRate * 0.5 +
+        (capacityPct ?? regScore) * 0.3 +
+        regScore * 0.2;
+
+      const roundedScore = Math.round(score);
+      const grade: EventSuccessScore['grade'] =
+        roundedScore >= 75 ? 'excellent' :
+        roundedScore >= 55 ? 'good' :
+        roundedScore >= 35 ? 'average' : 'low';
+
+      return {
+        titel: e.titel.length > 30 ? e.titel.slice(0, 27) + '…' : e.titel,
+        type: e.type,
+        score: roundedScore,
+        checkInRate,
+        capacityPct,
+        registrations: regs.length,
+        grade,
+      };
+    })
+    .sort((a, b) => b.score - a.score);
+}
+
+// ─── 3. Channel Effectiveness ─────────────────────────────────────────────────
+// Cross-tabs hoe_gevonden with check-in rate — reveals which discovery channels
+// produce the most committed attendees (not just registrations).
+
+export interface ChannelEffectivenessData {
+  channel: string;
+  registrations: number;
+  checkedIn: number;
+  checkInRate: number;
+  shareOfRegistrations: number;
+}
+
+export function computeChannelEffectiveness(events: AnalyticsEvent[]): ChannelEffectivenessData[] {
+  const allRegs = events.flatMap((e) => e.registrations ?? []);
+  const total = allRegs.length;
+
+  const channelMap: Record<string, { regs: number; checkedIn: number }> = {};
+
+  for (const reg of allRegs) {
+    const key = reg.hoe_gevonden?.trim() || 'Onbekend';
+    if (!channelMap[key]) channelMap[key] = { regs: 0, checkedIn: 0 };
+    channelMap[key].regs++;
+    if (reg.checked_in) channelMap[key].checkedIn++;
+  }
+
+  return Object.entries(channelMap)
+    .filter(([key]) => key !== 'Onbekend')
+    .map(([channel, { regs, checkedIn }]) => ({
+      channel,
+      registrations: regs,
+      checkedIn,
+      checkInRate: regs > 0 ? Math.round((checkedIn / regs) * 100) : 0,
+      shareOfRegistrations: total > 0 ? Math.round((regs / total) * 100) : 0,
+    }))
+    .sort((a, b) => b.registrations - a.registrations);
+}

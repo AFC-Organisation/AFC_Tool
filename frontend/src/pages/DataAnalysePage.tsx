@@ -1,5 +1,16 @@
-import { useMemo } from 'react';
-import { BarChart2, Loader2, AlertCircle, RefreshCw, TrendingUp } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+  BarChart2,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  TrendingUp,
+  Users,
+  Zap,
+  Calendar,
+  BarChart,
+  Globe,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -22,14 +33,15 @@ import { RegistrationSourceChart } from '../components/analytics/RegistrationSou
 import { YearComparisonChart } from '../components/analytics/YearComparisonChart';
 import { StrategicInsights } from '../components/analytics/StrategicInsights';
 import { ChartCard } from '../components/analytics/ChartCard';
-
-// ── NEW IMPORTS ────────────────────────────────────────────────────────────────
 import { LoyaltyChart } from '../components/analytics/LoyaltyChart';
 import { RegistrationTimingChart } from '../components/analytics/RegistrationTimingChart';
 import { FunFactsGrid } from '../components/analytics/FunFactsGrid';
 import { UniqueAttendeesChart } from '../components/analytics/UniqueAttendeesChart';
 import { EmailDomainChart } from '../components/analytics/EmailDomainChart';
 import { StudyProgramChart } from '../components/analytics/StudyProgramChart';
+import { RetentionFunnelChart } from '../components/analytics/RetentionFunnelChart';
+import { EventSuccessScoreChart } from '../components/analytics/EventSuccessScoreChart';
+import { ChannelEffectivenessChart } from '../components/analytics/ChannelEffectivenessChart';
 
 import {
   computeKPIs,
@@ -39,16 +51,32 @@ import {
   computeSourceDistribution,
   computeEventCheckInRates,
   generateInsights,
-  // ── NEW UTILS ──
   computeLoyaltyData,
   computeTimingData,
   computeUniqueAttendeesData,
   computeFunFacts,
   computeEmailDomains,
   computeStudyProgramDistribution,
+  computeRetentionFunnel,
+  computeEventSuccessScores,
+  computeChannelEffectiveness,
 } from '../lib/analyticsUtils';
 
+// ── Tab definitions ────────────────────────────────────────────────────────────
+const TABS = [
+  { id: 'overview',    label: 'Overzicht',    icon: BarChart2 },
+  { id: 'doelgroep',  label: 'Doelgroep',    icon: Users },
+  { id: 'engagement', label: 'Engagement',   icon: Zap },
+  { id: 'bereik',     label: 'Bereik',       icon: Globe },
+  { id: 'timing',     label: 'Timing',       icon: Calendar },
+  { id: 'vergelijking', label: 'Vergelijking', icon: BarChart },
+] as const;
+
+type TabId = typeof TABS[number]['id'];
+
 export default function DataAnalysePage() {
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
+
   const {
     years,
     selectedYear,
@@ -65,28 +93,27 @@ export default function DataAnalysePage() {
     refetch,
   } = useAnalytics();
 
-  // ── Existing computed data ──────────────────────────────────────────────────
-  const kpis        = useMemo(() => computeKPIs(events), [events]);
-  const facultyData = useMemo(() => computeFacultyDistribution(events, 10), [events]);
-  const howFoundData= useMemo(() => computeHowFoundDistribution(events), [events]);
-  const studyYearData=useMemo(() => computeStudyYearDistribution(events), [events]);
-  const sourceData  = useMemo(() => computeSourceDistribution(events), [events]);
-  const checkInData = useMemo(() => computeEventCheckInRates(events), [events]);
-  const insights    = useMemo(() => generateInsights(events, kpis), [events, kpis]);
-
-  // ── NEW computed data ───────────────────────────────────────────────────────
-  const loyaltyData   = useMemo(() => computeLoyaltyData(events), [events]);
-  const timingData    = useMemo(() => computeTimingData(events), [events]);
-  const uniqueData    = useMemo(() => computeUniqueAttendeesData(events), [events]);
-  const funFacts      = useMemo(() => computeFunFacts(events, loyaltyData, timingData), [events, loyaltyData, timingData]);
-  const emailDomains  = useMemo(() => computeEmailDomains(events), [events]);
-  const studyProgramData = useMemo(() => computeStudyProgramDistribution(events, 20),[events]);
+  // ── Computed data ─────────────────────────────────────────────────────────
+  const kpis             = useMemo(() => computeKPIs(events), [events]);
+  const facultyData      = useMemo(() => computeFacultyDistribution(events, 10), [events]);
+  const howFoundData     = useMemo(() => computeHowFoundDistribution(events), [events]);
+  const studyYearData    = useMemo(() => computeStudyYearDistribution(events), [events]);
+  const sourceData       = useMemo(() => computeSourceDistribution(events), [events]);
+  const checkInData      = useMemo(() => computeEventCheckInRates(events), [events]);
+  const insights         = useMemo(() => generateInsights(events, kpis), [events, kpis]);
+  const loyaltyData      = useMemo(() => computeLoyaltyData(events), [events]);
+  const timingData       = useMemo(() => computeTimingData(events), [events]);
+  const uniqueData       = useMemo(() => computeUniqueAttendeesData(events), [events]);
+  const funFacts         = useMemo(() => computeFunFacts(events, loyaltyData, timingData), [events, loyaltyData, timingData]);
+  const emailDomains     = useMemo(() => computeEmailDomains(events), [events]);
+  const studyProgramData = useMemo(() => computeStudyProgramDistribution(events, 20), [events]);
+  const retentionFunnel  = useMemo(() => computeRetentionFunnel(events), [events]);
+  const successScores    = useMemo(() => computeEventSuccessScores(events), [events]);
+  const channelData      = useMemo(() => computeChannelEffectiveness(events), [events]);
 
   const hasData = !loading && events.length > 0;
   const hasNoEvents = !loading && !error && allEvents.length === 0;
   const hasNoFilteredEvents = !loading && !error && allEvents.length > 0 && events.length === 0;
-
-
 
   return (
     <AppLayout title="Data Analyse" subtitle="Strategisch inzicht per academiejaar">
@@ -214,120 +241,228 @@ export default function DataAnalysePage() {
         {hasData && (
           <div className="space-y-6">
 
-            {/* ── KPI Cards ─────────────────────────────────────────────── */}
+            {/* ── KPI Cards always visible ──────────────────────────────── */}
             <AnalyticsKPICards kpis={kpis} />
 
-            {/* ── 🎉 Fun Facts ──────────────────────────────────────────── */}
-            {funFacts.length > 0 && (
-              <div>
-                <SectionHeader emoji="🎉" title="Leuke feiten & recordhouders" />
-                <FunFactsGrid facts={funFacts} />
+            {/* ── Tab navigation ───────────────────────────────────────── */}
+            <div className="border-b border-slate-200">
+              <nav className="-mb-px flex gap-1 overflow-x-auto">
+                {TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`
+                        flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors
+                        ${isActive
+                          ? 'border-[#ed6425] text-[#ed6425]'
+                          : 'border-transparent text-slate-500 hover:text-[#041c3a] hover:border-slate-300'
+                        }
+                      `}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* ══════════════════════════════════════════════════════════
+                TAB: OVERZICHT
+            ══════════════════════════════════════════════════════════ */}
+            {activeTab === 'overview' && (
+              <div className="space-y-6">
+                {funFacts.length > 0 && (
+                  <div>
+                    <SectionHeader emoji="🎉" title="Leuke feiten & recordhouders" />
+                    <FunFactsGrid facts={funFacts} />
+                  </div>
+                )}
+
+                <div>
+                  <SectionHeader emoji="💡" title="Strategische inzichten" />
+                  <StrategicInsights insights={insights} />
+                </div>
+
+                {/* Quick snapshot: check-in rate + success scores */}
+                <ChartCard
+                  title="Evenement prestaties"
+                  subtitle="Check-in rate en successcore per evenement"
+                  badge={`${events.length} events`}
+                >
+                  <EventSuccessScoreChart data={successScores} />
+                </ChartCard>
               </div>
             )}
 
-            {/* ── 💡 Strategic Insights ─────────────────────────────────── */}
-            <div>
-              <SectionHeader emoji="💡" title="Strategische inzichten" />
-              <StrategicInsights insights={insights} />
-            </div>
+            {/* ══════════════════════════════════════════════════════════
+                TAB: DOELGROEP
+            ══════════════════════════════════════════════════════════ */}
+            {activeTab === 'doelgroep' && (
+              <div className="space-y-6">
+                <SectionHeader emoji="🎓" title="Wie zijn onze deelnemers?" />
 
-            {/* ── 👥 Unieke bezoekers & groei ───────────────────────────── */}
-            <ChartCard
-              title="Unieke bezoekers & bereik"
-              subtitle="Hoeveel unieke mensen bereiken we, en hoe groeien die over evenementen heen"
-              badge={`${uniqueData.totalUnique} uniek`}
-            >
-              <UniqueAttendeesChart data={uniqueData} />
-            </ChartCard>
+                {/* Study year — FIXED: Onbekend filtered, proper color coding */}
+                <ChartCard
+                  title="Studiejaar verdeling"
+                  subtitle="Welke studiejaren participeren — enkel bekende data"
+                  badge={`${kpis.totalRegistrations} inschrijvingen`}
+                >
+                  <StudyYearChart data={studyYearData.filter(d => d.label !== 'Onbekend')} />
+                </ChartCard>
 
-            {/* ── 🏆 Loyaliteit & superfans ────────────────────────────── */}
-            <ChartCard
-              title="Loyaliteit & superfans"
-              subtitle="Hoeveel evenementen bezocht elke persoon? Wie zijn onze trouwste fans?"
-              badge={`${loyaltyData.totalUnique} bezoekers`}
-            >
-              <LoyaltyChart data={loyaltyData} />
-            </ChartCard>
+                {/* Faculty + Email domains side by side */}
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <ChartCard
+                    title="Faculteitsverdeling"
+                    subtitle="Top 10 faculteiten op basis van inschrijvingen"
+                    badge={`${kpis.uniqueFaculties} faculteiten`}
+                  >
+                    <FacultyChart data={facultyData.filter(d => d.label !== 'Onbekend')} />
+                  </ChartCard>
 
-            {/* ── ✅ Check-in rate per event ────────────────────────────── */}
-            <ChartCard
-              title="Check-in rate per evenement"
-              subtitle="Percentage ingeschreven deelnemers dat effectief aanwezig was"
-              badge={`${events.length} events`}
-            >
-              <CheckInRateChart data={checkInData} />
-            </ChartCard>
+                  <ChartCard
+                    title="E-maildomeinen"
+                    subtitle="Uni vs. privé e-mailadressen"
+                    badge={`${emailDomains.length} domeinen`}
+                  >
+                    <EmailDomainChart data={emailDomains} />
+                  </ChartCard>
+                </div>
 
-            {/* ── 🕐 Inschrijfgedrag & timing ──────────────────────────── */}
-            <ChartCard
-              title="Wanneer schrijven mensen zich in?"
-              subtitle="Uur van de dag, dag van de week, en hoe ver op voorhand"
-            >
-              <RegistrationTimingChart data={timingData} />
-            </ChartCard>
+                {/* Study programs */}
+                <ChartCard
+                  title="Opleidingen"
+                  subtitle="Welke studierichtingen schrijven zich het meest in"
+                  badge={`${studyProgramData.length} opleidingen`}
+                >
+                  <StudyProgramChart data={studyProgramData} />
+                </ChartCard>
 
-            {/* ── 2-col: Faculty + How Found ────────────────────────────── */}
-            <div className="grid gap-4 lg:grid-cols-2">
-              <ChartCard
-                title="Faculteitsverdeling"
-                subtitle="Top 10 faculteiten op basis van inschrijvingen"
-                badge={`${kpis.uniqueFaculties} faculteiten`}
-              >
-                <FacultyChart data={facultyData} />
-              </ChartCard>
+                {/* New: Bachelor vs Master breakdown insight card */}
+                <AudienceBreakdownCard studyYearData={studyYearData} />
+              </div>
+            )}
 
-              <ChartCard
-                title="Hoe gevonden?"
-                subtitle="Via welk kanaal deelnemers de evenementen ontdekten"
-              >
-                <HowFoundChart data={howFoundData} />
-              </ChartCard>
-            </div>
-            <ChartCard
-              title="Opleidingen"
-              subtitle="Welke studierichtingen schrijven zich het meest in"
-              badge={`${studyProgramData.length} opleidingen`}
-            >
-              <StudyProgramChart data={studyProgramData} />
-            </ChartCard>
+            {/* ══════════════════════════════════════════════════════════
+                TAB: ENGAGEMENT
+            ══════════════════════════════════════════════════════════ */}
+            {activeTab === 'engagement' && (
+              <div className="space-y-6">
+                <SectionHeader emoji="❤️" title="Loyaliteit & betrokkenheid" />
 
-            {/* ── 2-col: Study Year + Source ────────────────────────────── */}
-            <div className="grid gap-4 lg:grid-cols-2">
-              <ChartCard
-                title="Studiejaar verdeling"
-                subtitle="Welke studiejaren participeren het meest"
-              >
-                <StudyYearChart data={studyYearData} />
-              </ChartCard>
+                {/* Retention funnel */}
+                <ChartCard
+                  title="Retentietrechter"
+                  subtitle="Van inschrijving naar aanwezigheid naar terugkeer"
+                >
+                  <RetentionFunnelChart data={retentionFunnel} />
+                </ChartCard>
 
-              <ChartCard
-                title="Registratiebron"
-                subtitle="Via welk platform werden inschrijvingen ingediend"
-              >
-                <RegistrationSourceChart data={sourceData} />
-              </ChartCard>
-            </div>
+                {/* Loyalty */}
+                <ChartCard
+                  title="Loyaliteit & superfans"
+                  subtitle="Hoeveel evenementen bezocht elke persoon?"
+                  badge={`${loyaltyData.totalUnique} bezoekers`}
+                >
+                  <LoyaltyChart data={loyaltyData} />
+                </ChartCard>
 
-            {/* ── 📧 E-maildomeinen ─────────────────────────────────────── */}
-            <ChartCard
-              title="E-maildomeinen"
-              subtitle="Welke e-maildomeinen gebruiken onze deelnemers? Uni vs. privé"
-              badge={`${emailDomains.length} domeinen`}
-            >
-              <EmailDomainChart data={emailDomains} />
-            </ChartCard>
+                {/* Check-in rate per event */}
+                <ChartCard
+                  title="Check-in rate per evenement"
+                  subtitle="Percentage ingeschreven deelnemers dat effectief aanwezig was"
+                  badge={`${events.length} events`}
+                >
+                  <CheckInRateChart data={checkInData} />
+                </ChartCard>
+              </div>
+            )}
 
-            {/* ── 📊 Year comparison ────────────────────────────────────── */}
-            <ChartCard
-              title="Vergelijking over academiejaren"
-              subtitle="Inschrijvingen en aanwezigheid per academiejaar (alle afgeronde evenementen)"
-              badge={`${yearSummaries.length} jaren`}
-            >
-              <YearComparisonChart
-                summaries={yearSummaries}
-                selectedYearId={selectedYearId}
-              />
-            </ChartCard>
+            {/* ══════════════════════════════════════════════════════════
+                TAB: BEREIK
+            ══════════════════════════════════════════════════════════ */}
+            {activeTab === 'bereik' && (
+              <div className="space-y-6">
+                <SectionHeader emoji="📡" title="Hoe bereiken we mensen?" />
+
+                {/* Unique attendees growth */}
+                <ChartCard
+                  title="Unieke bezoekers & bereik"
+                  subtitle="Hoeveel unieke mensen bereiken we over evenementen heen"
+                  badge={`${uniqueData.totalUnique} uniek`}
+                >
+                  <UniqueAttendeesChart data={uniqueData} />
+                </ChartCard>
+
+                {/* Channel effectiveness — how found vs check-in rate */}
+                <ChartCard
+                  title="Kanaaleffectiviteit"
+                  subtitle="Welk kanaal levert de meeste én meest betrokken deelnemers"
+                >
+                  <ChannelEffectivenessChart data={channelData} />
+                </ChartCard>
+
+                {/* How found + Source side by side */}
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <ChartCard
+                    title="Hoe gevonden?"
+                    subtitle="Via welk kanaal deelnemers de evenementen ontdekten"
+                  >
+                    <HowFoundChart data={howFoundData.filter(d => d.label !== 'Onbekend')} />
+                  </ChartCard>
+
+                  <ChartCard
+                    title="Registratiebron"
+                    subtitle="Via welk platform werden inschrijvingen ingediend"
+                  >
+                    <RegistrationSourceChart data={sourceData} />
+                  </ChartCard>
+                </div>
+              </div>
+            )}
+
+            {/* ══════════════════════════════════════════════════════════
+                TAB: TIMING
+            ══════════════════════════════════════════════════════════ */}
+            {activeTab === 'timing' && (
+              <div className="space-y-6">
+                <SectionHeader emoji="🕐" title="Wanneer schrijven mensen zich in?" />
+
+                <ChartCard
+                  title="Inschrijfgedrag & timing"
+                  subtitle="Uur van de dag, dag van de week, en hoe ver op voorhand"
+                >
+                  <RegistrationTimingChart data={timingData} />
+                </ChartCard>
+
+                {/* Timing stat pills */}
+                <TimingInsightCards timingData={timingData} />
+              </div>
+            )}
+
+            {/* ══════════════════════════════════════════════════════════
+                TAB: VERGELIJKING
+            ══════════════════════════════════════════════════════════ */}
+            {activeTab === 'vergelijking' && (
+              <div className="space-y-6">
+                <SectionHeader emoji="📊" title="Vergelijking over academiejaren" />
+
+                <ChartCard
+                  title="Inschrijvingen & aanwezigheid per academiejaar"
+                  subtitle="Alle afgeronde evenementen — langetermijntrend"
+                  badge={`${yearSummaries.length} jaren`}
+                >
+                  <YearComparisonChart
+                    summaries={yearSummaries}
+                    selectedYearId={selectedYearId}
+                  />
+                </ChartCard>
+              </div>
+            )}
 
           </div>
         )}
@@ -336,7 +471,8 @@ export default function DataAnalysePage() {
   );
 }
 
-// ── Helper ────────────────────────────────────────────────────────────────────
+// ── Helper components ──────────────────────────────────────────────────────────
+
 function SectionHeader({ emoji, title }: { emoji: string; title: string }) {
   return (
     <h2 className="text-sm font-semibold text-[#041c3a] mb-3 flex items-center gap-2">
@@ -344,5 +480,80 @@ function SectionHeader({ emoji, title }: { emoji: string; title: string }) {
       <span>{title}</span>
       <span className="h-px flex-1 bg-slate-100" />
     </h2>
+  );
+}
+
+/** Quick bachelor vs master breakdown card shown in Doelgroep tab */
+function AudienceBreakdownCard({ studyYearData }: { studyYearData: { label: string; count: number; percentage: number }[] }) {
+  const known = studyYearData.filter(d => d.label !== 'Onbekend');
+  const total = known.reduce((s, d) => s + d.count, 0);
+  if (total === 0) return null;
+
+  const bachelor = known.filter(d => d.label.toLowerCase().includes('bachelor')).reduce((s, d) => s + d.count, 0);
+  const master   = known.filter(d => d.label.toLowerCase().includes('master')).reduce((s, d) => s + d.count, 0);
+  const docto    = known.filter(d => d.label.toLowerCase().includes('doctoraat')).reduce((s, d) => s + d.count, 0);
+  const other    = total - bachelor - master - docto;
+
+  const pct = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0;
+
+  const segments = [
+    { label: 'Bachelor', count: bachelor, pct: pct(bachelor), color: 'bg-blue-400' },
+    { label: 'Master',   count: master,   pct: pct(master),   color: 'bg-[#ed6425]' },
+    { label: 'Doctoraat',count: docto,    pct: pct(docto),    color: 'bg-[#041c3a]' },
+    { label: 'Andere',   count: other,    pct: pct(other),    color: 'bg-slate-300' },
+  ].filter(s => s.count > 0);
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-5">
+      <p className="text-sm font-semibold text-[#041c3a] mb-3">Niveauverdeling (enkel bekende data)</p>
+
+      {/* Stacked bar */}
+      <div className="flex rounded-full overflow-hidden h-4 mb-4 gap-0.5">
+        {segments.map(s => (
+          <div
+            key={s.label}
+            className={`${s.color} transition-all`}
+            style={{ width: `${s.pct}%` }}
+            title={`${s.label}: ${s.pct}%`}
+          />
+        ))}
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-4">
+        {segments.map(s => (
+          <div key={s.label} className="flex items-center gap-2">
+            <span className={`w-3 h-3 rounded-sm ${s.color}`} />
+            <span className="text-xs text-slate-600">
+              <strong className="text-[#041c3a]">{s.pct}%</strong> {s.label}
+              <span className="text-slate-400 ml-1">({s.count})</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Small stat pills for timing insights */
+function TimingInsightCards({ timingData }: { timingData: ReturnType<typeof import('../lib/analyticsUtils').computeTimingData> }) {
+  const stats = [
+    { emoji: '⚡', label: 'Last-minute', value: `${timingData.lastMinutePct}%`, sub: 'schreef zich dag zelf of dag ervoor in' },
+    { emoji: '🐦', label: 'Early birds', value: `${timingData.earlyBirdPct}%`, sub: 'schreef zich >2 weken op voorhand in' },
+    { emoji: '🕐', label: 'Piekuur',     value: `${timingData.peakHour}u`,     sub: 'meeste inschrijvingen' },
+    { emoji: '📅', label: 'Piekdag',     value: timingData.peakDay,            sub: 'drukste dag van de week' },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {stats.map(s => (
+        <div key={s.label} className="rounded-xl border border-slate-200 bg-white p-4 text-center">
+          <div className="text-xl mb-1">{s.emoji}</div>
+          <div className="text-xl font-bold text-[#041c3a]">{s.value}</div>
+          <div className="text-[11px] font-medium text-[#ed6425] mb-0.5">{s.label}</div>
+          <div className="text-[11px] text-slate-400">{s.sub}</div>
+        </div>
+      ))}
+    </div>
   );
 }
