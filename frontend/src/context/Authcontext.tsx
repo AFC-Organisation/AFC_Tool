@@ -28,18 +28,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Load existing session on mount
+    // ✅ Just seed the state, do NOT setLoading(false) here
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false)
     })
 
-    // Listen for auth state changes (login, logout, token refresh)
+    // ✅ This fires after processing the OAuth redirect — set loading here only
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false)
+      setLoading(false) // 👈 only here
     })
 
     return () => subscription.unsubscribe()
