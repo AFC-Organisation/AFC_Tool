@@ -194,6 +194,9 @@ export function EventDrawer({
                   onImportFromTicketTailorAPI={(ttEventId) =>
                     onImportFromTicketTailorAPI(event.id, ttEventId)
                   }
+                  onUpdateFinancieel={(value) =>
+                    onUpdateEvent(event.id, { financieel_resultaat: value } as any)
+                  }
                 />
               </div>
             )}

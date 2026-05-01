@@ -2,7 +2,8 @@ import {
   Calendar, MapPin, Users, Clock, FileText, Globe, Share2,
   Package, Mic, MessageSquare, ChevronDown, ChevronUp, User,
   Phone, Mail, CheckCircle2, XCircle, UserCheck, Info,
-  Layers, BookOpen, Building2, Search, Download,
+  Layers, BookOpen, Building2, Search, Download, Euro,
+  TrendingUp, TrendingDown, Archive,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import {
@@ -82,6 +83,33 @@ interface AcademicYear {
   created_at?: string | null;
 }
 
+interface CrewRol {
+  id: string;
+  naam: string;
+  beschrijving?: string | null;
+}
+
+interface CrewMember {
+  id: string;
+  user_id: string;
+  rol_id?: string | null;
+  notities?: string | null;
+  bevestigd?: boolean | null;
+  created_at?: string | null;
+  rol?: CrewRol | null;
+  user_email?: string | null;
+  user_naam?: string | null;
+}
+
+interface InventoryItem {
+  id: string;
+  naam: string;
+  hoeveelheid_voor?: number | null;
+  hoeveelheid_na?: number | null;
+  eenheid?: string | null;
+  notities?: string | null;
+}
+
 interface FullEvent extends EventWithRegistrations {
   academic_year?: AcademicYear | null;
   domains?: Domain[];
@@ -92,6 +120,12 @@ interface FullEvent extends EventWithRegistrations {
   event_materiaal?: Materiaal[];
   registrations?: Registration[];
   feedback?: Feedback[];
+  // new fields from form & upload
+  financieel_resultaat?: number | null;
+  crew?: CrewMember[];
+  event_crew?: CrewMember[];
+  inventaris?: InventoryItem[];
+  event_inventaris?: InventoryItem[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,6 +138,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string; bor
   gepubliceerd: { bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500',    border: 'border-blue-100',   label: 'Gepubliceerd' },
   afgerond:     { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-100',label: 'Afgerond' },
   geannuleerd:  { bg: 'bg-red-50',     text: 'text-red-600',     dot: 'bg-red-400',     border: 'border-red-100',    label: 'Geannuleerd' },
+  compleet:     { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-100',label: 'Compleet' },
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -315,6 +350,197 @@ function EmptyState({ message }: { message: string }) {
   return (
     <div className="py-6 text-center border border-dashed border-slate-200 rounded-xl">
       <p className="text-xs text-slate-400 italic">{message}</p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Financial section
+// ─────────────────────────────────────────────────────────────────────────────
+
+function FinancieelSection({ value }: { value: number }) {
+  const isPositive = value >= 0;
+  return (
+    <div>
+      <SectionTitle icon={<Euro className="h-4 w-4" />}>Financieel resultaat</SectionTitle>
+      <div
+        className={`flex items-center gap-4 p-4 rounded-xl border ${
+          isPositive ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'
+        }`}
+      >
+        {isPositive ? (
+          <TrendingUp className="h-8 w-8 text-emerald-500 shrink-0" />
+        ) : (
+          <TrendingDown className="h-8 w-8 text-red-500 shrink-0" />
+        )}
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+            {isPositive ? 'Winst' : 'Verlies'}
+          </p>
+          <p className={`text-3xl font-extrabold ${isPositive ? 'text-emerald-700' : 'text-red-600'}`}>
+            € {value.toFixed(2)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Crew section
+// ─────────────────────────────────────────────────────────────────────────────
+
+function CrewSection({ crew }: { crew: CrewMember[] }) {
+  // Group by rol
+  const rollen = useMemo(() => {
+    const map = new Map<string, { rolNaam: string; members: CrewMember[] }>();
+    crew.forEach((m) => {
+      const key = m.rol?.id ?? m.rol_id ?? 'other';
+      const naam = m.rol?.naam ?? '—';
+      if (!map.has(key)) map.set(key, { rolNaam: naam, members: [] });
+      map.get(key)!.members.push(m);
+    });
+    return Array.from(map.values());
+  }, [crew]);
+
+  const confirmed = crew.filter((m) => m.bevestigd).length;
+
+  return (
+    <div>
+      <SectionTitle icon={<Users className="h-4 w-4" />} badge={crew.length}>
+        Crew
+      </SectionTitle>
+
+      {/* summary strip */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="p-3 rounded-xl bg-[#041c3a] text-center">
+          <p className="text-2xl font-extrabold text-white">{crew.length}</p>
+          <p className="text-[10px] text-white/60 font-bold uppercase tracking-widest mt-0.5">Totaal</p>
+        </div>
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-center">
+          <p className="text-2xl font-extrabold text-emerald-700">{confirmed}</p>
+          <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mt-0.5">Bevestigd</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {rollen.map(({ rolNaam, members }) => (
+          <div key={rolNaam}>
+            <div className="flex items-center gap-2 mb-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#041c3a]">{rolNaam}</p>
+              <span className="bg-[#ed6425]/10 text-[#ed6425] text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                {members.length}
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {members.map((member) => {
+                const displayName =
+                  member.user_naam ??
+                  member.user_email?.split('@')[0] ??
+                  'Gebruiker';
+                return (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-3 bg-white border border-slate-100 rounded-xl px-3 py-2.5"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#041c3a]/10 flex items-center justify-center flex-shrink-0 text-xs font-extrabold text-[#041c3a]">
+                      {displayName[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[#041c3a] truncate">{displayName}</p>
+                      {member.user_email && (
+                        <p className="text-[11px] text-slate-400 truncate">{member.user_email}</p>
+                      )}
+                      {member.notities && (
+                        <p className="text-[11px] text-slate-400 italic truncate">{member.notities}</p>
+                      )}
+                    </div>
+                    <span
+                      className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
+                        member.bevestigd
+                          ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                          : 'bg-amber-100 text-amber-700 border-amber-200'
+                      }`}
+                    >
+                      {member.bevestigd ? '✓ Bevestigd' : 'In afwachting'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Inventory section
+// ─────────────────────────────────────────────────────────────────────────────
+
+function InventarisSection({ items }: { items: InventoryItem[] }) {
+  return (
+    <div>
+      <SectionTitle icon={<Archive className="h-4 w-4" />} badge={items.length}>
+        Inventaris & stock
+      </SectionTitle>
+      <div className="space-y-2">
+        {items.map((item) => {
+          const verschil =
+            item.hoeveelheid_voor != null && item.hoeveelheid_na != null
+              ? item.hoeveelheid_na - item.hoeveelheid_voor
+              : null;
+          return (
+            <div
+              key={item.id}
+              className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-white"
+            >
+              <div className="h-7 w-7 rounded-lg bg-[#ed6425]/10 flex items-center justify-center shrink-0">
+                <Archive className="h-3.5 w-3.5 text-[#ed6425]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[#041c3a]">{item.naam}</p>
+                {item.notities && (
+                  <p className="text-xs text-slate-400 italic truncate">{item.notities}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-3 shrink-0 text-xs">
+                {item.hoeveelheid_voor != null && (
+                  <div className="text-center">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Voor</p>
+                    <p className="font-bold text-[#041c3a]">
+                      {item.hoeveelheid_voor} {item.eenheid ?? ''}
+                    </p>
+                  </div>
+                )}
+                {item.hoeveelheid_na != null && (
+                  <div className="text-center">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Na</p>
+                    <p className="font-bold text-[#041c3a]">
+                      {item.hoeveelheid_na} {item.eenheid ?? ''}
+                    </p>
+                  </div>
+                )}
+                {verschil != null && (
+                  <div
+                    className={`text-center px-2 py-1 rounded-lg border font-bold ${
+                      verschil < 0
+                        ? 'bg-red-50 border-red-100 text-red-600'
+                        : verschil > 0
+                        ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                        : 'bg-slate-50 border-slate-100 text-slate-400'
+                    }`}
+                  >
+                    <p className="text-[10px] font-bold uppercase">Δ</p>
+                    <p>{verschil > 0 ? '+' : ''}{verschil}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -641,7 +867,6 @@ interface EventDetailSheetProps {
 export function EventDetailSheet({ event, onClose }: EventDetailSheetProps) {
   if (!event) return null;
 
-  // Fall back gracefully for any unknown status value
   const status = STATUS_STYLES[event.status] ?? {
     bg: 'bg-slate-100', text: 'text-slate-600', dot: 'bg-slate-400',
     border: 'border-slate-200', label: event.status,
@@ -649,12 +874,16 @@ export function EventDetailSheet({ event, onClose }: EventDetailSheetProps) {
 
   const feedback = event.feedback ?? [];
 
-  // Accept both 'speakers' and 'event_sprekers' (Supabase join key)
   const speakers = [...(event.speakers ?? event.event_sprekers ?? [])]
     .sort((a, b) => (a.volgorde ?? 99) - (b.volgorde ?? 99));
 
-  // Accept both 'materiaal' and 'event_materiaal' (Supabase join key)
   const materiaal = event.materiaal ?? event.event_materiaal ?? [];
+
+  // New: crew & inventory
+  const crew: CrewMember[] = event.crew ?? event.event_crew ?? [];
+  const inventaris: InventoryItem[] = event.inventaris ?? event.event_inventaris ?? [];
+
+  const financieel = event.financieel_resultaat;
 
   return (
     <Sheet open={!!event} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -680,7 +909,6 @@ export function EventDetailSheet({ event, onClose }: EventDetailSheetProps) {
             </div>
             <div className="flex gap-2 flex-wrap">
               <Pill color="orange">{TYPE_LABELS[event.type] ?? event.type}</Pill>
-              {/* Status reads directly from event.status — covers voorbereid, concept, gepubliceerd, afgerond, geannuleerd */}
               <span className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg font-semibold border ${status.bg} ${status.text} ${status.border}`}>
                 <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
                 {status.label}
@@ -777,10 +1005,16 @@ export function EventDetailSheet({ event, onClose }: EventDetailSheetProps) {
             </div>
           )}
 
+          {/* ── FINANCIEEL RESULTAAT ── */}
+          {financieel != null && <FinancieelSection value={financieel} />}
+
           {/* ── INSCHRIJVINGEN ── */}
           <RegistrationsSection event={event} />
 
-          {/* ── SPREKERS ── always visible, no Collapsible wrapper hiding data */}
+          {/* ── CREW ── */}
+          {crew.length > 0 && <CrewSection crew={crew} />}
+
+          {/* ── SPREKERS ── */}
           <div>
             <SectionTitle icon={<Mic className="h-4 w-4" />} badge={speakers.length}>Sprekers</SectionTitle>
             {speakers.length === 0
@@ -832,7 +1066,7 @@ export function EventDetailSheet({ event, onClose }: EventDetailSheetProps) {
               )}
           </div>
 
-          {/* ── MATERIAAL ── always visible, no Collapsible wrapper hiding data */}
+          {/* ── MATERIAAL ── */}
           <div>
             <SectionTitle icon={<Package className="h-4 w-4" />} badge={materiaal.length}>Materiaal</SectionTitle>
             {materiaal.length === 0
@@ -898,6 +1132,9 @@ export function EventDetailSheet({ event, onClose }: EventDetailSheetProps) {
                 </div>
               )}
           </div>
+
+          {/* ── INVENTARIS ── */}
+          {inventaris.length > 0 && <InventarisSection items={inventaris} />}
 
           {/* ── FEEDBACK ── */}
           {feedback.length > 0 && <FeedbackSection feedback={feedback} />}

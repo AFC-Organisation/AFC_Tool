@@ -19,8 +19,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Plus, Trash2, Save, User, Package, Users, Check, X, Pencil } from 'lucide-react';
+import { Plus, Trash2, Save, User, Package, Users, Check, X, Pencil, Archive } from 'lucide-react';
 import type { Event, EventFormData, EventType, SprekerRol } from '../../../types/event';
+import { EventInventorySection } from './EventInventorySection';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1027,6 +1028,24 @@ export function EventForm({
           ))}
         </div>
       </Section>
+      
+      {event?.id && (
+        <Section
+          icon={<Archive className="w-3.5 h-3.5" />}
+          title="Inventaris & stock"
+        >
+          <EventInventorySection
+            eventId={event.id}
+            eventAfgelopen={
+              event.event_datum
+                ? new Date(event.event_datum) < new Date()
+                : false
+            }
+          />
+        </Section>
+      )}
+
+
 
       {/* ── Crew — only shown when editing an existing event ── */}
       {event?.id && userId && (
