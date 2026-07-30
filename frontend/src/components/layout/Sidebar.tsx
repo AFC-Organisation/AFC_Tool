@@ -30,11 +30,6 @@ const navItems = [
     href: '/academiejaren',
     icon: GraduationCap,
   },
-  {
-    label: 'Inventaris',
-    href: '/inventaris',
-    icon: GraduationCap,
-  },
 ];
 
 export function Sidebar() {
