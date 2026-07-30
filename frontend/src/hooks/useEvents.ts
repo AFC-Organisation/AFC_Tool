@@ -29,7 +29,6 @@ export function useEvents(academicYearId?: string) {
         .select(`
           *,
           event_sprekers(*),
-          event_materiaal(*),
           registrations(id),
           feedback(*),
           event_domains(domain_id, domains(*))
@@ -42,7 +41,6 @@ export function useEvents(academicYearId?: string) {
       const mapped = (data || []).map((e: any) => ({
         ...e,
         sprekers: e.event_sprekers || [],
-        materiaal: e.event_materiaal || [],
         registraties: e.registrations || [],
         domains: e.event_domains?.map((ed: any) => ed.domains).filter(Boolean) || [],
       }));
@@ -75,7 +73,6 @@ export function useEvent(eventId?: string) {
         .select(`
           *,
           event_sprekers(*),
-          event_materiaal(*),
           registrations(*),
           feedback(*),
           event_domains(domain_id, domains(*))
@@ -87,7 +84,6 @@ export function useEvent(eventId?: string) {
       setEvent({
         ...data,
         sprekers: data.event_sprekers || [],
-        materiaal: data.event_materiaal || [],
         registraties: data.registrations || [],
         domains: data.event_domains?.map((ed: any) => ed.domains).filter(Boolean) || [],
       });
@@ -128,7 +124,7 @@ export function useEventMutations() {
     setLoading(true);
     setError(null);
     try {
-      const { sprekers, materiaal, domain_ids, ...eventData } = formData;
+      const { sprekers, domain_ids, ...eventData } = formData;
 
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -165,12 +161,6 @@ export function useEventMutations() {
         );
       }
 
-      if (materiaal?.length) {
-        await supabase.from('event_materiaal').insert(
-          materiaal.map((m) => ({ ...m, event_id: event.id }))
-        );
-      }
-
       if (domain_ids?.length) {
         await supabase.from('event_domains').insert(
           domain_ids.map((d) => ({ event_id: event.id, domain_id: d }))
@@ -194,7 +184,7 @@ export function useEventMutations() {
     setLoading(true);
     setError(null);
     try {
-      const { sprekers, materiaal, domain_ids, ...eventData } = formData;
+      const { sprekers, domain_ids, ...eventData } = formData;
 
       const { error: eventError } = await supabase
         .from('events')
@@ -208,15 +198,6 @@ export function useEventMutations() {
         if (sprekers.length) {
           await supabase.from('event_sprekers').insert(
             sprekers.map((s) => ({ ...s, event_id: eventId }))
-          );
-        }
-      }
-
-      if (materiaal !== undefined) {
-        await supabase.from('event_materiaal').delete().eq('event_id', eventId);
-        if (materiaal.length) {
-          await supabase.from('event_materiaal').insert(
-            materiaal.map((m) => ({ ...m, event_id: eventId }))
           );
         }
       }

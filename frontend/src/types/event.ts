@@ -33,18 +33,6 @@ export interface Spreker {
   created_at: string;
 }
 
-export interface EventMateriaal {
-  id: string;
-  event_id: string;
-  item: string;
-  hoeveelheid?: string;
-  leverancier?: string;
-  contact_naam?: string;
-  contact_email?: string;
-  contact_telefoon?: string;
-  created_at: string;
-}
-
 export interface Registration {
   id: string;
   event_id: string;
@@ -95,7 +83,6 @@ export interface Event {
   updated_at: string;
   // Relations
   sprekers?: Spreker[];
-  materiaal?: EventMateriaal[];
   registraties?: Registration[];
   feedback?: Feedback[];
   domains?: Domain[];
@@ -113,7 +100,6 @@ export interface EventFormData {
   start_tijd?: string;
   einde_tijd?: string;
   sprekers?: Omit<Spreker, 'id' | 'event_id' | 'created_at'>[];
-  materiaal?: Omit<EventMateriaal, 'id' | 'event_id' | 'created_at'>[];
   domain_ids?: string[];
 }
 

@@ -59,11 +59,6 @@ export function getAutoTodos(event: Event): AutoTodo[] {
       label: 'Minstens één spreker toevoegen',
       filled: !!(event.sprekers && event.sprekers.length > 0),
     },
-    {
-      id: 'auto_materiaal',
-      label: 'Materiaal & logistiek invullen',
-      filled: !!(event.materiaal && event.materiaal.length > 0),
-    },
   ];
 
   return checks.map(({ id, label, filled }) => ({

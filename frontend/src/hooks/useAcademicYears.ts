@@ -154,7 +154,6 @@ export function useEventDetail() {
         academic_year:academic_years(*),
         domains:event_domains(*, domain:domains(*)),
         event_sprekers(*),
-        event_materiaal(*),
         registrations(*),
         feedback(*)
       `)

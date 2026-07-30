@@ -35,17 +35,6 @@ interface Speaker {
   created_at?: string | null;
 }
 
-interface Materiaal {
-  id: string;
-  item: string;
-  hoeveelheid?: string | null;
-  leverancier?: string | null;
-  contact_naam?: string | null;
-  contact_email?: string | null;
-  contact_telefoon?: string | null;
-  created_at?: string | null;
-}
-
 interface Registration {
   id: string;
   bron?: string | null;
@@ -101,31 +90,18 @@ interface CrewMember {
   user_naam?: string | null;
 }
 
-interface InventoryItem {
-  id: string;
-  naam: string;
-  hoeveelheid_voor?: number | null;
-  hoeveelheid_na?: number | null;
-  eenheid?: string | null;
-  notities?: string | null;
-}
-
 interface FullEvent extends EventWithRegistrations {
   academic_year?: AcademicYear | null;
   domains?: Domain[];
   // accept both key names that Supabase might return
   speakers?: Speaker[];
   event_sprekers?: Speaker[];
-  materiaal?: Materiaal[];
-  event_materiaal?: Materiaal[];
   registrations?: Registration[];
   feedback?: Feedback[];
   // new fields from form & upload
   financieel_resultaat?: number | null;
   crew?: CrewMember[];
   event_crew?: CrewMember[];
-  inventaris?: InventoryItem[];
-  event_inventaris?: InventoryItem[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -476,76 +452,6 @@ function CrewSection({ crew }: { crew: CrewMember[] }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Inventory section
-// ─────────────────────────────────────────────────────────────────────────────
-
-function InventarisSection({ items }: { items: InventoryItem[] }) {
-  return (
-    <div>
-      <SectionTitle icon={<Archive className="h-4 w-4" />} badge={items.length}>
-        Inventaris & stock
-      </SectionTitle>
-      <div className="space-y-2">
-        {items.map((item) => {
-          const verschil =
-            item.hoeveelheid_voor != null && item.hoeveelheid_na != null
-              ? item.hoeveelheid_na - item.hoeveelheid_voor
-              : null;
-          return (
-            <div
-              key={item.id}
-              className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-white"
-            >
-              <div className="h-7 w-7 rounded-lg bg-[#ed6425]/10 flex items-center justify-center shrink-0">
-                <Archive className="h-3.5 w-3.5 text-[#ed6425]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#041c3a]">{item.naam}</p>
-                {item.notities && (
-                  <p className="text-xs text-slate-400 italic truncate">{item.notities}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-3 shrink-0 text-xs">
-                {item.hoeveelheid_voor != null && (
-                  <div className="text-center">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">Voor</p>
-                    <p className="font-bold text-[#041c3a]">
-                      {item.hoeveelheid_voor} {item.eenheid ?? ''}
-                    </p>
-                  </div>
-                )}
-                {item.hoeveelheid_na != null && (
-                  <div className="text-center">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">Na</p>
-                    <p className="font-bold text-[#041c3a]">
-                      {item.hoeveelheid_na} {item.eenheid ?? ''}
-                    </p>
-                  </div>
-                )}
-                {verschil != null && (
-                  <div
-                    className={`text-center px-2 py-1 rounded-lg border font-bold ${
-                      verschil < 0
-                        ? 'bg-red-50 border-red-100 text-red-600'
-                        : verschil > 0
-                        ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                        : 'bg-slate-50 border-slate-100 text-slate-400'
-                    }`}
-                  >
-                    <p className="text-[10px] font-bold uppercase">Δ</p>
-                    <p>{verschil > 0 ? '+' : ''}{verschil}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Registrations sub-section
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -877,11 +783,8 @@ export function EventDetailSheet({ event, onClose }: EventDetailSheetProps) {
   const speakers = [...(event.speakers ?? event.event_sprekers ?? [])]
     .sort((a, b) => (a.volgorde ?? 99) - (b.volgorde ?? 99));
 
-  const materiaal = event.materiaal ?? event.event_materiaal ?? [];
-
-  // New: crew & inventory
+  // New
   const crew: CrewMember[] = event.crew ?? event.event_crew ?? [];
-  const inventaris: InventoryItem[] = event.inventaris ?? event.event_inventaris ?? [];
 
   const financieel = event.financieel_resultaat;
 
@@ -1065,76 +968,6 @@ export function EventDetailSheet({ event, onClose }: EventDetailSheetProps) {
                 </div>
               )}
           </div>
-
-          {/* ── MATERIAAL ── */}
-          <div>
-            <SectionTitle icon={<Package className="h-4 w-4" />} badge={materiaal.length}>Materiaal</SectionTitle>
-            {materiaal.length === 0
-              ? <EmptyState message="Geen materiaal gekoppeld aan dit event." />
-              : (
-                <div className="space-y-3">
-                  {materiaal.map(m => (
-                    <div key={m.id} className="rounded-xl border border-slate-100 bg-white p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className="h-7 w-7 rounded-lg bg-[#ed6425]/10 flex items-center justify-center shrink-0">
-                            <Package className="h-3.5 w-3.5 text-[#ed6425]" />
-                          </div>
-                          <p className="font-bold text-sm text-[#041c3a]">{m.item}</p>
-                        </div>
-                        {m.hoeveelheid && (
-                          <span className="text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-600 font-semibold border border-slate-200">
-                            × {m.hoeveelheid}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        {m.leverancier && (
-                          <div>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Leverancier</p>
-                            <p className="text-slate-600 font-medium flex items-center gap-1.5">
-                              <Building2 className="h-3 w-3 text-slate-400 shrink-0" />
-                              {m.leverancier}
-                            </p>
-                          </div>
-                        )}
-                        {(m.contact_naam || m.contact_email || m.contact_telefoon) && (
-                          <div className="space-y-1.5">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Contact</p>
-                            {m.contact_naam && (
-                              <div className="flex items-center gap-1.5 text-slate-600">
-                                <User className="h-3 w-3 text-slate-400 shrink-0" />
-                                {m.contact_naam}
-                              </div>
-                            )}
-                            {m.contact_email && (
-                              <div className="flex items-center gap-1.5">
-                                <Mail className="h-3 w-3 text-slate-400 shrink-0" />
-                                <a href={`mailto:${m.contact_email}`} className="text-blue-500 hover:underline">{m.contact_email}</a>
-                              </div>
-                            )}
-                            {m.contact_telefoon && (
-                              <div className="flex items-center gap-1.5 text-slate-600">
-                                <Phone className="h-3 w-3 text-slate-400 shrink-0" />
-                                <a href={`tel:${m.contact_telefoon}`} className="hover:text-blue-500">{m.contact_telefoon}</a>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {m.created_at && (
-                        <p className="text-[10px] text-slate-300 mt-3">Toegevoegd op {formatDateTime(m.created_at)}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-          </div>
-
-          {/* ── INVENTARIS ── */}
-          {inventaris.length > 0 && <InventarisSection items={inventaris} />}
 
           {/* ── FEEDBACK ── */}
           {feedback.length > 0 && <FeedbackSection feedback={feedback} />}

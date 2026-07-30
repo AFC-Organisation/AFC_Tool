@@ -274,45 +274,6 @@ export function EventDetail({ event }: EventDetailProps) {
         </SectionCard>
       )}
 
-      {/* ── Materiaal ── */}
-      {event.materiaal && event.materiaal.length > 0 && (
-        <SectionCard
-          icon={<Package className="w-3.5 h-3.5 text-[#ed6425]" />}
-          title="Materiaal"
-          badge={event.materiaal.length}
-        >
-          <div className="space-y-2">
-            {event.materiaal.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-start justify-between py-2.5 px-3 bg-slate-50 rounded-lg border border-slate-100"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-[#041c3a]">{item.item}</p>
-                  {item.leverancier && (
-                    <p className="text-xs text-slate-500">{item.leverancier}</p>
-                  )}
-                  {item.contact_naam && (
-                    <p className="text-xs text-slate-400">{item.contact_naam}</p>
-                  )}
-                  {item.contact_email && (
-                    <p className="text-xs text-blue-500">{item.contact_email}</p>
-                  )}
-                </div>
-                {item.hoeveelheid && (
-                  <Badge
-                    variant="secondary"
-                    className="text-xs bg-[#041c3a]/10 text-[#041c3a] font-semibold ml-2 flex-shrink-0"
-                  >
-                    {item.hoeveelheid}
-                  </Badge>
-                )}
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-      )}
-
       {/* ── Crew ── */}
       {crew.length > 0 && (
         <SectionCard

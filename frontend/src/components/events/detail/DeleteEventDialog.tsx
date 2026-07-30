@@ -43,7 +43,7 @@ export function DeleteEventDialog({
           <AlertDialogDescription className="text-slate-500 text-sm leading-relaxed pl-12">
             Je staat op het punt{' '}
             <span className="font-semibold text-slate-700">"{eventTitel}"</span> permanent te
-            verwijderen. Alle gekoppelde sprekers, materiaal, inschrijvingen en feedback worden
+            verwijderen. Alle gekoppelde sprekers, inschrijvingen en feedback worden
             ook verwijderd.{' '}
             <span className="text-red-500 font-semibold">Dit kan niet ongedaan worden gemaakt.</span>
           </AlertDialogDescription>

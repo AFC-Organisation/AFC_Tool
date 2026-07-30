@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/dialog';
 import { Plus, Trash2, Save, User, Package, Users, Check, X, Pencil, Archive } from 'lucide-react';
 import type { Event, EventFormData, EventType, SprekerRol } from '../../../types/event';
-import { EventInventorySection } from './EventInventorySection';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,15 +49,6 @@ interface SprekerForm {
   rol: SprekerRol;
   omschrijving: string;
   volgorde: number;
-}
-
-interface MateriaalForm {
-  item: string;
-  hoeveelheid: string;
-  leverancier: string;
-  contact_naam: string;
-  contact_email: string;
-  contact_telefoon: string;
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -592,17 +582,6 @@ export function EventForm({
     })) ?? []
   );
 
-  const [materiaal, setMateriaal] = useState<MateriaalForm[]>(
-    event?.materiaal?.map((m) => ({
-      item: m.item,
-      hoeveelheid: m.hoeveelheid ?? '',
-      leverancier: m.leverancier ?? '',
-      contact_naam: m.contact_naam ?? '',
-      contact_email: m.contact_email ?? '',
-      contact_telefoon: m.contact_telefoon ?? '',
-    })) ?? []
-  );
-
   const addSpreker = () =>
     setSprekers((prev) => [
       ...prev,
@@ -614,25 +593,6 @@ export function EventForm({
 
   const removeSpreker = (idx: number) =>
     setSprekers((prev) => prev.filter((_, i) => i !== idx));
-
-  const addMateriaal = () =>
-    setMateriaal((prev) => [
-      ...prev,
-      {
-        item: '',
-        hoeveelheid: '',
-        leverancier: '',
-        contact_naam: '',
-        contact_email: '',
-        contact_telefoon: '',
-      },
-    ]);
-
-  const updateMateriaal = (idx: number, field: keyof MateriaalForm, value: string) =>
-    setMateriaal((prev) => prev.map((m, i) => (i === idx ? { ...m, [field]: value } : m)));
-
-  const removeMateriaal = (idx: number) =>
-    setMateriaal((prev) => prev.filter((_, i) => i !== idx));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -648,7 +608,6 @@ export function EventForm({
       start_tijd: startTijd || undefined,
       einde_tijd: eindeTijd || undefined,
       sprekers: sprekers.map((s, i) => ({ ...s, volgorde: i })),
-      materiaal,
     });
   };
 
@@ -932,118 +891,6 @@ export function EventForm({
           ))}
         </div>
       </Section>
-
-      {/* ── Materiaal & logistiek ── */}
-      <Section
-        icon={<Package className="w-3.5 h-3.5" />}
-        title="Materiaal & logistiek"
-        badge={materiaal.length}
-        action={
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addMateriaal}
-            className="border-[#041c3a]/20 text-[#041c3a] hover:bg-[#041c3a] hover:text-white text-xs h-7"
-          >
-            <Plus className="w-3 h-3 mr-1" />
-            Toevoegen
-          </Button>
-        }
-      >
-        {materiaal.length === 0 && (
-          <p className="text-xs text-slate-400 text-center py-5 font-medium">
-            Nog geen materiaal toegevoegd
-          </p>
-        )}
-        <div className="space-y-3">
-          {materiaal.map((item, idx) => (
-            <div key={idx} className="border border-slate-200 rounded-lg p-3 space-y-3 bg-white">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#041c3a] uppercase tracking-wide">
-                  Item {idx + 1}
-                </span>
-                <div className="flex-1" />
-                <button
-                  type="button"
-                  onClick={() => removeMateriaal(idx)}
-                  className="text-slate-300 hover:text-red-500 transition-colors p-1 rounded"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className={labelClass}>Item *</Label>
-                  <Input
-                    value={item.item}
-                    onChange={(e) => updateMateriaal(idx, 'item', e.target.value)}
-                    placeholder="Naam van het item"
-                    required
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className={labelClass}>Hoeveelheid</Label>
-                  <Input
-                    value={item.hoeveelheid}
-                    onChange={(e) => updateMateriaal(idx, 'hoeveelheid', e.target.value)}
-                    placeholder="bv. 50 stuks"
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <Label className={labelClass}>Leverancier</Label>
-                  <Input
-                    value={item.leverancier}
-                    onChange={(e) => updateMateriaal(idx, 'leverancier', e.target.value)}
-                    placeholder="Bedrijf"
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className={labelClass}>Contactpersoon</Label>
-                  <Input
-                    value={item.contact_naam}
-                    onChange={(e) => updateMateriaal(idx, 'contact_naam', e.target.value)}
-                    placeholder="Naam"
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className={labelClass}>Contact email</Label>
-                  <Input
-                    value={item.contact_email}
-                    onChange={(e) => updateMateriaal(idx, 'contact_email', e.target.value)}
-                    placeholder="email@..."
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Section>
-      
-      {event?.id && (
-        <Section
-          icon={<Archive className="w-3.5 h-3.5" />}
-          title="Inventaris & stock"
-        >
-          <EventInventorySection
-            eventId={event.id}
-            eventAfgelopen={
-              event.event_datum
-                ? new Date(event.event_datum) < new Date()
-                : false
-            }
-          />
-        </Section>
-      )}
 
 
 

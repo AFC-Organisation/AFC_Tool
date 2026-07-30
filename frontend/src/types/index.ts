@@ -59,17 +59,6 @@ export interface EventSpreker {
   created_at: string;
 }
 
-export interface EventMateriaal {
-  id: string;
-  event_id: string;
-  item: string;
-  hoeveelheid: string | null;
-  leverancier: string | null;
-  contact_naam: string | null;
-  contact_email: string | null;
-  contact_telefoon: string | null;
-  created_at: string;
-}
 
 export interface Registration {
   id: string;
