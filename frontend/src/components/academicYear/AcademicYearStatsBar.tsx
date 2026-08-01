@@ -6,7 +6,8 @@ interface AcademicYearStatsBarProps {
 }
 
 export function AcademicYearStatsBar({ year }: AcademicYearStatsBarProps) {
-  const afgerond = year.events.filter((e) => e.status === 'afgerond').length;
+  // AcademicYearStatsBar.tsx
+const afgerond = year.events.filter((e) => e.status === 'afgerond' || e.status === 'compleet').length;
 
   const stats = [
     {

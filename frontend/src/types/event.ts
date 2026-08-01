@@ -88,6 +88,33 @@ export interface Event {
   domains?: Domain[];
 }
 
+export interface EventRolUser {
+  event_rol_id: string;
+  user_id: string;
+  created_at: string;
+  // joined client-side via get_users_info rpc
+  user_email?: string;
+  user_naam?: string | null;
+}
+
+export interface EventRol {
+  id: string;
+  event_id: string;
+  naam: string;
+  beschrijving: string | null;
+  uren: string;
+  plaatsen: number;
+  is_default: boolean;
+  created_at: string;
+  toegewezen?: EventRolUser[];
+}
+export interface EventRolFormData {
+  naam: string;
+  beschrijving: string;
+  uren: string;
+  plaatsen: number;
+}
+
 export interface EventFormData {
   type: EventType;
   titel: string;

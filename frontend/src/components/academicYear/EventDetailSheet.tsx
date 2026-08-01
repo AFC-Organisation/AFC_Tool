@@ -72,23 +72,22 @@ interface AcademicYear {
   created_at?: string | null;
 }
 
-interface CrewRol {
-  id: string;
-  naam: string;
-  beschrijving?: string | null;
-}
-
-interface CrewMember {
-  id: string;
+interface EventRolUser {
   user_id: string;
-  rol_id?: string | null;
-  notities?: string | null;
-  bevestigd?: boolean | null;
-  created_at?: string | null;
-  rol?: CrewRol | null;
   user_email?: string | null;
   user_naam?: string | null;
 }
+
+interface EventRol {
+  id: string;
+  naam: string;
+  beschrijving?: string | null;
+  uren: string;
+  plaatsen: number;
+  is_default: boolean;
+  toegewezen?: EventRolUser[];
+}
+
 
 interface FullEvent extends EventWithRegistrations {
   academic_year?: AcademicYear | null;
@@ -100,8 +99,7 @@ interface FullEvent extends EventWithRegistrations {
   feedback?: Feedback[];
   // new fields from form & upload
   financieel_resultaat?: number | null;
-  crew?: CrewMember[];
-  event_crew?: CrewMember[];
+  event_rollen?: EventRol[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -366,86 +364,62 @@ function FinancieelSection({ value }: { value: number }) {
 // Crew section
 // ─────────────────────────────────────────────────────────────────────────────
 
-function CrewSection({ crew }: { crew: CrewMember[] }) {
-  // Group by rol
-  const rollen = useMemo(() => {
-    const map = new Map<string, { rolNaam: string; members: CrewMember[] }>();
-    crew.forEach((m) => {
-      const key = m.rol?.id ?? m.rol_id ?? 'other';
-      const naam = m.rol?.naam ?? '—';
-      if (!map.has(key)) map.set(key, { rolNaam: naam, members: [] });
-      map.get(key)!.members.push(m);
-    });
-    return Array.from(map.values());
-  }, [crew]);
-
-  const confirmed = crew.filter((m) => m.bevestigd).length;
+function CrewSection({ rollen }: { rollen: EventRol[] }) {
+  const totalAssigned = rollen.reduce((sum, r) => sum + (r.toegewezen?.length ?? 0), 0);
 
   return (
     <div>
-      <SectionTitle icon={<Users className="h-4 w-4" />} badge={crew.length}>
-        Crew
+      <SectionTitle icon={<Users className="h-4 w-4" />} badge={totalAssigned}>
+        Rollen
       </SectionTitle>
 
-      {/* summary strip */}
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="p-3 rounded-xl bg-[#041c3a] text-center">
-          <p className="text-2xl font-extrabold text-white">{crew.length}</p>
-          <p className="text-[10px] text-white/60 font-bold uppercase tracking-widest mt-0.5">Totaal</p>
-        </div>
-        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-center">
-          <p className="text-2xl font-extrabold text-emerald-700">{confirmed}</p>
-          <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mt-0.5">Bevestigd</p>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        {rollen.map(({ rolNaam, members }) => (
-          <div key={rolNaam}>
-            <div className="flex items-center gap-2 mb-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#041c3a]">{rolNaam}</p>
-              <span className="bg-[#ed6425]/10 text-[#ed6425] text-[10px] font-bold px-1.5 py-0.5 rounded-md">
-                {members.length}
-              </span>
-            </div>
-            <div className="space-y-1.5">
-              {members.map((member) => {
-                const displayName =
-                  member.user_naam ??
-                  member.user_email?.split('@')[0] ??
-                  'Gebruiker';
-                return (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-3 bg-white border border-slate-100 rounded-xl px-3 py-2.5"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-[#041c3a]/10 flex items-center justify-center flex-shrink-0 text-xs font-extrabold text-[#041c3a]">
-                      {displayName[0]?.toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#041c3a] truncate">{displayName}</p>
-                      {member.user_email && (
-                        <p className="text-[11px] text-slate-400 truncate">{member.user_email}</p>
-                      )}
-                      {member.notities && (
-                        <p className="text-[11px] text-slate-400 italic truncate">{member.notities}</p>
-                      )}
-                    </div>
-                    <span
-                      className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
-                        member.bevestigd
-                          ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                          : 'bg-amber-100 text-amber-700 border-amber-200'
-                      }`}
-                    >
-                      {member.bevestigd ? '✓ Bevestigd' : 'In afwachting'}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {rollen.map((rol) => {
+          const count = rol.toegewezen?.length ?? 0;
+          const full = !rol.is_default && count >= rol.plaatsen;
+          return (
+            <div key={rol.id} className="rounded-xl border border-slate-100 bg-white overflow-hidden">
+              <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#041c3a]">{rol.naam}</p>
+                  {rol.is_default && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-[#ed6425]/10 text-[#ed6425]">
+                      Standaard
                     </span>
+                  )}
+                </div>
+                {rol.uren && <p className="text-[10px] text-slate-400 mt-0.5">{rol.uren}</p>}
+              </div>
+
+              <div className="p-3 space-y-2">
+                {!rol.is_default && (
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold">
+                    <span>Plaatsen</span>
+                    <span className={full ? 'text-red-500' : ''}>{count} / {rol.plaatsen}</span>
                   </div>
-                );
-              })}
+                )}
+
+                {count === 0 ? (
+                  <p className="text-[11px] text-slate-300 italic">Nog niemand toegewezen</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {rol.toegewezen!.map((t) => {
+                      const name = t.user_naam ?? t.user_email?.split('@')[0] ?? 'Gebruiker';
+                      return (
+                        <div key={t.user_id} className="flex items-center gap-2.5 bg-slate-50 rounded-lg px-2.5 py-1.5">
+                          <div className="w-6 h-6 rounded-full bg-[#041c3a]/10 flex items-center justify-center text-[10px] font-bold text-[#041c3a] shrink-0">
+                            {name[0]?.toUpperCase()}
+                          </div>
+                          <p className="text-xs font-medium text-[#041c3a] truncate">{name}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -783,8 +757,7 @@ export function EventDetailSheet({ event, onClose }: EventDetailSheetProps) {
   const speakers = [...(event.speakers ?? event.event_sprekers ?? [])]
     .sort((a, b) => (a.volgorde ?? 99) - (b.volgorde ?? 99));
 
-  // New
-  const crew: CrewMember[] = event.crew ?? event.event_crew ?? [];
+  const rollen: EventRol[] = event.event_rollen ?? [];
 
   const financieel = event.financieel_resultaat;
 
@@ -914,8 +887,8 @@ export function EventDetailSheet({ event, onClose }: EventDetailSheetProps) {
           {/* ── INSCHRIJVINGEN ── */}
           <RegistrationsSection event={event} />
 
-          {/* ── CREW ── */}
-          {crew.length > 0 && <CrewSection crew={crew} />}
+          {/* ── ROLLEN ── */}
+          {rollen.length > 0 && <CrewSection rollen={rollen} />}
 
           {/* ── SPREKERS ── */}
           <div>

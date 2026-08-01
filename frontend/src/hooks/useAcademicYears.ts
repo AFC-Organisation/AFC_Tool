@@ -155,7 +155,8 @@ export function useEventDetail() {
         domains:event_domains(*, domain:domains(*)),
         event_sprekers(*),
         registrations(*),
-        feedback(*)
+        feedback(*),
+        event_rollen(*, event_rol_users(*))
       `)
       .eq('id', eventId)
       .single();
@@ -163,7 +164,32 @@ export function useEventDetail() {
     if (data) {
       data.registrations_count = data.registrations?.length ?? 0;
     }
+     
+    const allUserIds = [
+     ...new Set(
+       (data.event_rollen ?? []).flatMap((r: any) =>
+         (r.event_rol_users ?? []).map((t: any) => t.user_id)
+        )
+      ),
+    ];
 
+    let userMap = new Map<string, any>();
+    if (allUserIds.length) {
+      const { data: usersInfo } = await supabase.rpc('get_users_info', { user_ids: allUserIds });
+      userMap = new Map((usersInfo ?? []).map((u: any) => [u.id, u]));
+    }
+
+    data.event_rollen = (data.event_rollen ?? []).map((r: any) => ({
+      ...r,
+      toegewezen: (r.event_rol_users ?? []).map((t: any) => {
+        const u = userMap.get(t.user_id);
+        return {
+          ...t,
+          user_email: u?.email ?? t.user_id,
+          user_naam: u?.full_name ?? null,
+        };
+      }),
+    }));
     setEvent(data);
     setLoading(false);
   }, []);

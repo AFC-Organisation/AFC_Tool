@@ -16,18 +16,6 @@ interface EventDetailProps {
   event: Event;
 }
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
-function fullName(r: {
-  voornaam?: string | null;
-  achternaam?: string | null;
-  naam?: string | null;
-  email?: string | null;
-}): string {
-  const parts = [r.voornaam, r.achternaam].filter(Boolean);
-  return parts.length ? parts.join(' ') : r.naam ?? r.email ?? '—';
-}
-
 // ─── sub-components ───────────────────────────────────────────────────────────
 
 function SectionCard({
@@ -90,15 +78,13 @@ export function EventDetail({ event }: EventDetailProps) {
   const isPositive = financieel != null && financieel >= 0;
   const isNegative = financieel != null && financieel < 0;
 
-  // Crew — may be joined on the event object
-  const crew: any[] = (event as any).crew ?? (event as any).event_crew ?? [];
+  // Rollen — may be joined on the event object
+  const rollen: any[] = (event as any).event_rollen ?? [];
 
   return (
     <div className="space-y-6">
       {/* ── Header badges ── */}
       <div className="flex flex-wrap gap-2 items-center">
-        <EventTypeBadge type={event.type} showIcon />
-        <EventStatusBadge status={event.status} />
         {event.is_published && (
           <Badge
             variant="outline"
@@ -274,54 +260,50 @@ export function EventDetail({ event }: EventDetailProps) {
         </SectionCard>
       )}
 
-      {/* ── Crew ── */}
-      {crew.length > 0 && (
+      {/* ── Rollen ── */}
+      {rollen.length > 0 && (
         <SectionCard
           icon={<Users className="w-3.5 h-3.5 text-[#ed6425]" />}
-          title="Crew"
-          badge={crew.length}
+          title="Rollen"
+          badge={rollen.reduce((sum, r) => sum + (r.toegewezen?.length ?? 0), 0)}
         >
-          <div className="space-y-2">
-            {crew.map((member: any) => {
-              const displayName =
-                member.user_naam ??
-                member.user_email?.split('@')[0] ??
-                'Gebruiker';
-              const rolNaam = member.rol?.naam ?? member.rol_naam ?? '—';
+          <div className="space-y-3">
+            {rollen.map((rol: any) => {
+              const count = rol.toegewezen?.length ?? 0;
+              const full = !rol.is_default && count >= rol.plaatsen;
               return (
-                <div
-                  key={member.id}
-                  className="flex items-center gap-3 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100"
-                >
-                  <div className="w-7 h-7 rounded-full bg-[#041c3a]/10 flex items-center justify-center flex-shrink-0 text-xs font-bold text-[#041c3a]">
-                    {displayName[0]?.toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#041c3a] truncate">{displayName}</p>
-                    {member.user_email && (
-                      <p className="text-xs text-slate-400 truncate">{member.user_email}</p>
+                <div key={rol.id} className="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-[#041c3a]">{rol.naam}</p>
+                      {rol.is_default && (
+                        <Badge variant="outline" className="text-[9px] bg-[#ed6425]/10 text-[#ed6425] border-[#ed6425]/20">
+                          Standaard
+                        </Badge>
+                      )}
+                    </div>
+                    {!rol.is_default && (
+                      <span className={`text-xs font-semibold ${full ? 'text-red-500' : 'text-slate-400'}`}>
+                        {count} / {rol.plaatsen}
+                      </span>
                     )}
-                    {member.notities && (
-                      <p className="text-xs text-slate-400 italic truncate">{member.notities}</p>
-                    )}
                   </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] text-slate-500 border-slate-200"
-                    >
-                      {rolNaam}
-                    </Badge>
-                    <Badge
-                      className={`text-[10px] border px-1.5 py-0 ${
-                        member.bevestigd
-                          ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                          : 'bg-amber-100 text-amber-700 border-amber-200'
-                      }`}
-                    >
-                      {member.bevestigd ? 'Bevestigd' : 'In afwachting'}
-                    </Badge>
-                  </div>
+                  {rol.uren && <p className="text-xs text-slate-400">{rol.uren}</p>}
+                  {count > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {rol.toegewezen.map((t: any) => {
+                        const name = t.user_naam ?? t.user_email?.split('@')[0] ?? 'Gebruiker';
+                        return (
+                          <span
+                            key={t.user_id}
+                            className="text-[11px] font-medium text-[#041c3a] bg-white border border-slate-200 rounded-full px-2.5 py-1"
+                          >
+                            {name}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}

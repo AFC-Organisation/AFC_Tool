@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronDown, ChevronRight, Flame, MoreHorizontal, CheckCheck } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ChevronDown, ChevronRight, Flame, MoreHorizontal, CheckCheck, Search, MapPin, Users, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -8,7 +8,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { AcademicYearStatsBar } from './AcademicYearStatsBar';
-import { EventCard } from './EventCard';
 import type { AcademicYearWithEvents, EventWithRegistrations } from '../types/academiejaar';
 
 interface AcademicYearCardProps {
@@ -18,14 +17,121 @@ interface AcademicYearCardProps {
   onViewEvent: (event: EventWithRegistrations) => void;
 }
 
+// Academiejaar loopt vast van september (8) t/m mei (4), kalenderjaar-onafhankelijk
+const MONTH_ORDER = [8, 9, 10, 11, 0, 1, 2, 3, 4]; // sep, okt, nov, dec, jan, feb, mrt, apr, mei
+const MONTH_LABELS = ['Sep', 'Okt', 'Nov', 'Dec', 'Jan', 'Feb', 'Mrt', 'Apr', 'Mei'];
+
+const STATUS_FILTERS = [
+  { key: 'all', label: 'Alle' },
+  { key: 'upcoming', label: 'Aankomend' },
+  { key: 'concept', label: 'Concept' },
+  { key: 'gepubliceerd', label: 'Gepubliceerd' },
+  { key: 'afgerond', label: 'Afgerond' },
+  { key: 'geannuleerd', label: 'Geannuleerd' },
+] as const;
+
+type StatusFilter = (typeof STATUS_FILTERS)[number]['key'];
+
+const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
+  concept:      { bg: 'bg-slate-100',  text: 'text-slate-500',   dot: 'bg-slate-400' },
+  gepubliceerd: { bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500' },
+  afgerond:     { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  geannuleerd:  { bg: 'bg-red-50',     text: 'text-red-600',     dot: 'bg-red-400' },
+};
+
+const TYPE_STYLES: Record<string, string> = {
+  workshop: 'bg-[#ed6425]/10 text-[#ed6425] border-[#ed6425]/20',
+  lezing:   'bg-[#041c3a]/8 text-[#041c3a] border-[#041c3a]/12',
+  project:  'bg-cyan-50 text-cyan-700 border-cyan-100',
+  andere:   'bg-slate-100 text-slate-600 border-slate-200',
+};
+
 function formatDateRange(start: string, end: string): string {
   const s = new Date(start).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' });
   const e = new Date(end).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' });
   return `${s} – ${e}`;
 }
 
+/** Compacte kaart voor in de maandkolom */
+function CompactEventCard({ event, onView }: { event: EventWithRegistrations; onView: (e: EventWithRegistrations) => void }) {
+  const status = STATUS_STYLES[event.status] ?? STATUS_STYLES.concept;
+  const typeStyle = TYPE_STYLES[event.type] ?? TYPE_STYLES.andere;
+
+  return (
+    <button
+      onClick={() => onView(event)}
+      className="w-full text-left group flex flex-col gap-1.5 p-2.5 rounded-lg border border-slate-100 bg-white hover:border-[#041c3a]/25 hover:shadow-sm transition-all"
+    >
+      <div className="flex items-start justify-between gap-1.5">
+        <span className="text-[11px] font-bold text-[#041c3a] leading-snug line-clamp-2">
+          {event.titel}
+        </span>
+        {event.event_datum && (
+          <span className="shrink-0 text-[10px] font-bold text-[#ed6425] bg-[#ed6425]/8 rounded px-1 py-0.5">
+            {new Date(event.event_datum).getDate()}
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-1 flex-wrap">
+        <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold border ${typeStyle}`}>
+          {event.type}
+        </span>
+        <span className={`flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded font-semibold ${status.bg} ${status.text}`}>
+          <span className={`h-1 w-1 rounded-full ${status.dot}`} />
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2 text-[9px] text-slate-400 flex-wrap">
+        {event.locatie && (
+          <span className="flex items-center gap-0.5 truncate max-w-[80px]">
+            <MapPin className="h-2.5 w-2.5 shrink-0" />
+            {event.locatie}
+          </span>
+        )}
+        {event.start_tijd && (
+          <span className="flex items-center gap-0.5">
+            <Clock className="h-2.5 w-2.5 shrink-0" />
+            {event.start_tijd.slice(0, 5)}
+          </span>
+        )}
+        <span className="flex items-center gap-0.5">
+          <Users className="h-2.5 w-2.5 shrink-0" />
+          {event.registrations_count}
+        </span>
+      </div>
+    </button>
+  );
+}
+
 export function AcademicYearCard({ year, defaultOpen = false, onSetCurrent, onViewEvent }: AcademicYearCardProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const [search, setSearch] = useState('');
+
+
+  // Verdeel events over de 9 vaste maandkolommen (sep t/m mei); geen datum → laatste kolom
+  const columns = useMemo(() => {
+    const buckets: EventWithRegistrations[][] = MONTH_ORDER.map(() => []);
+    const noDate: EventWithRegistrations[] = [];
+
+    for (const e of year.events) {
+      if (!e.event_datum) {
+        noDate.push(e);
+        continue;
+      }
+      const m = new Date(e.event_datum).getMonth();
+      const idx = MONTH_ORDER.indexOf(m);
+      if (idx === -1) continue;
+      buckets[idx].push(e);
+    }
+
+    // sorteer elke kolom chronologisch op dag
+    buckets.forEach((b) =>
+      b.sort((a, c) => new Date(a.event_datum!).getTime() - new Date(c.event_datum!).getTime())
+    );
+
+    return { buckets, noDate };
+  }, []);
 
   return (
     <div
@@ -35,7 +141,6 @@ export function AcademicYearCard({ year, defaultOpen = false, onSetCurrent, onVi
           : 'border-slate-200 hover:border-slate-300'
         }`}
     >
-      {/* Active year accent stripe */}
       {year.is_huidig && (
         <div className="h-1 w-full bg-gradient-to-r from-[#ed6425] to-[#041c3a]" />
       )}
@@ -45,7 +150,6 @@ export function AcademicYearCard({ year, defaultOpen = false, onSetCurrent, onVi
         className="flex items-center gap-4 px-5 py-4 cursor-pointer select-none hover:bg-slate-50/60 transition-colors"
         onClick={() => setOpen((o) => !o)}
       >
-        {/* Toggle icon */}
         <span className="text-slate-400 shrink-0">
           {open
             ? <ChevronDown className="h-4 w-4 text-[#041c3a]" />
@@ -53,7 +157,6 @@ export function AcademicYearCard({ year, defaultOpen = false, onSetCurrent, onVi
           }
         </span>
 
-        {/* Year info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <h3 className="text-base font-bold text-[#041c3a] tracking-tight">{year.naam}</h3>
@@ -69,12 +172,10 @@ export function AcademicYearCard({ year, defaultOpen = false, onSetCurrent, onVi
           </p>
         </div>
 
-        {/* Stats (desktop) */}
         <div className="hidden md:block" onClick={(e) => e.stopPropagation()}>
           <AcademicYearStatsBar year={year} />
         </div>
 
-        {/* Actions */}
         <div onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -101,22 +202,66 @@ export function AcademicYearCard({ year, defaultOpen = false, onSetCurrent, onVi
         </div>
       </div>
 
-      {/* Mobile stats */}
       <div className="md:hidden px-5 pb-3" onClick={() => setOpen((o) => !o)}>
         <AcademicYearStatsBar year={year} />
       </div>
 
-      {/* Events list */}
       {open && (
-        <div className="border-t border-slate-100 bg-slate-50/40 px-5 py-4 space-y-2">
+        <div className="border-t border-slate-100 bg-slate-50/40 px-5 py-4 space-y-4">
           {year.events.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <p className="text-sm text-slate-400">Geen evenementen voor dit academiejaar.</p>
             </div>
           ) : (
-            year.events.map((event) => (
-              <EventCard key={event.id} event={event} onView={onViewEvent} />
-            ))
+            <>
+              {/* Maandkolommen: sep t/m mei, naast elkaar */}
+              <div className="overflow-x-auto -mx-1 pb-1">
+                <div className="grid grid-flow-col auto-cols-[minmax(140px,1fr)] gap-2 min-w-full">
+                  {MONTH_LABELS.map((label, i) => {
+                    const events = columns.buckets[i];
+                    return (
+                      <div key={label} className="flex flex-col rounded-xl bg-white border border-slate-100 min-h-[80px]">
+                        <div className="flex items-center justify-between px-2.5 py-2 border-b border-slate-100">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500">
+                            {label}
+                          </span>
+                          {events.length > 0 && (
+                            <span className="text-[9px] font-bold text-[#ed6425] bg-[#ed6425]/10 rounded-full px-1.5 py-0.5">
+                              {events.length}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 p-1.5 space-y-1.5">
+                          {events.length === 0 ? (
+                            <div className="h-full flex items-center justify-center py-4">
+                              <span className="text-[10px] text-slate-300 italic">—</span>
+                            </div>
+                          ) : (
+                            events.map((event) => (
+                              <CompactEventCard key={event.id} event={event} onView={onViewEvent} />
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Events zonder datum */}
+              {columns.noDate.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Zonder datum ({columns.noDate.length})
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
+                    {columns.noDate.map((event) => (
+                      <CompactEventCard key={event.id} event={event} onView={onViewEvent} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

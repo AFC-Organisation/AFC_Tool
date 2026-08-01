@@ -91,19 +91,21 @@ export function EventDrawer({
                 {EVENT_TYPE_LABELS[event.type]}
               </Badge>
               <EventStatusBadge status={event.status} />
-              <div className="flex-1" />
+            </div>
+
+            <div className="flex items-center gap-2 mt-2">
+              <SheetTitle className="text-left text-[#041c3a] font-black text-xl leading-tight">
+                {event.titel || 'Nieuw concept'}
+              </SheetTitle>
               <button
                 onClick={() => setDeleteDialogOpen(true)}
-                className="text-slate-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                className="text-slate-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50 flex-shrink-0"
                 title="Evenement verwijderen"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
 
-            <SheetTitle className="text-left mt-2 text-[#041c3a] font-black text-xl leading-tight">
-              {event.titel || 'Nieuw concept'}
-            </SheetTitle>
 
             {/* Status flow stepper */}
             <div className="flex items-center gap-1 mt-3">

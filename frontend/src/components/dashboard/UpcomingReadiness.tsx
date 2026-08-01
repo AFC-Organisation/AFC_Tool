@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clock, CheckCircle2, ChevronRight, CalendarX } from 'lucide-react';
+import { AlertTriangle, Clock, CheckCircle2, ChevronRight, CalendarX, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-
+import { EventRollenDialog } from '../events/forms/EventRollenDialog';
+import type { Event } from '../../../types/event';
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface UpcomingEvent {
@@ -16,6 +17,7 @@ interface UpcomingEvent {
   max_deelnemers: number | null;
   start_tijd: string | null;
   registratie_aantal: number;
+  created_by: string | null;
 }
 
 interface MissingField {
@@ -121,6 +123,7 @@ const URGENCY_STYLES = {
 export function UpcomingReadiness() {
   const [results, setResults] = useState<ReadinessResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rollenEvent, setRollenEvent] = useState<UpcomingEvent | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -138,7 +141,7 @@ export function UpcomingReadiness() {
       // Fetch upcoming non-complete events + registration count via the view
       const { data } = await supabase
         .from('events_with_registration_count')
-        .select('id, titel, status, type, event_datum, locatie, beschrijving_website, max_deelnemers, start_tijd, registratie_aantal')
+        .select('id, titel, status, type, event_datum, locatie, beschrijving_website, max_deelnemers, start_tijd, registratie_aantal, created_by')
         .eq('academic_year_id', currentYear.id)
         .not('status', 'eq', 'compleet')
         .or(`event_datum.gte.${today},event_datum.is.null`)
@@ -264,7 +267,18 @@ export function UpcomingReadiness() {
                   </p>
                 )}
               </div>
-
+              {/* Quick crew signup */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRollenEvent(result.event);
+                }}
+                className="shrink-0 self-center p-2 rounded-lg border border-slate-200 text-[#041c3a] hover:bg-[#041c3a] hover:text-white transition-colors"
+                title="Inschrijven voor een rol"
+              >
+                <Users className="h-3.5 w-3.5" />
+              </button>
               {/* Completion bar + chevron */}
               <div className="shrink-0 flex flex-col items-end gap-1.5 ml-2">
                 <span className="text-[11px] font-semibold text-zinc-400">
@@ -285,6 +299,18 @@ export function UpcomingReadiness() {
           );
         })}
       </div>
+      {rollenEvent && (
+        <EventRollenDialog
+          event={{
+            id: rollenEvent.id,
+            titel: rollenEvent.titel,
+           status: rollenEvent.status as Event['status'],
+            created_by: rollenEvent.created_by,
+          } as Event}
+          open={!!rollenEvent}
+          onOpenChange={(o) => { if (!o) setRollenEvent(null); }}
+        />
+      )}
     </section>
   );
 }

@@ -38,7 +38,7 @@ export default function AcademiejarenPage() {
       title="Academiejaren Historiek"
       subtitle="Overzicht van alle jaren"
     >
-      <div className="p-6 max-w-4xl mx-auto space-y-6">
+      <div className="p-6 max-w-screen-2xl mx-auto space-y-6">
 
         {/* Page header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">

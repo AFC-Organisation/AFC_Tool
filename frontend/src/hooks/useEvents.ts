@@ -154,6 +154,15 @@ export function useEventMutations() {
         .single();
 
       if (eventError) throw eventError;
+      
+      await supabase.from('event_rollen').insert({
+        event_id: event.id,
+        naam: 'Aanwezig',
+        beschrijving: null,
+        uren: '',
+        plaatsen: 999,
+        is_default: true,
+      });
 
       if (sprekers?.length) {
         await supabase.from('event_sprekers').insert(

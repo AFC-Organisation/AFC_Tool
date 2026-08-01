@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { EventStatusBadge } from './EventStatusBadge';
 import { EventTypeBadge } from './EventTypeBadge';
-import { CrewDialog } from '../forms/CrewDialog';
+import { EventRollenDialog } from '../forms/EventRollenDialog';
 import type { Event, EventStatus } from '../../../types/event';
 import { getNextStatus, EVENT_STATUS_LABELS, isEditable } from '../../../types/event';
 import { format } from 'date-fns';
@@ -28,7 +28,7 @@ export function EventCard({ event, onOpen, onAdvanceStatus, onRevertStatus }: Ev
   const nextStatus = getNextStatus(event.status);
   const regCount = event.registraties?.length ?? 0;
   const editable = isEditable(event.status);
-  const [crewDialogOpen, setCrewDialogOpen] = useState(false);
+  const [rollenDialogOpen, setRollenDialogOpen] = useState(false);
 
   return (
     <>
@@ -89,8 +89,8 @@ export function EventCard({ event, onOpen, onAdvanceStatus, onRevertStatus }: Ev
             variant="outline"
             size="sm"
             className="text-xs border-slate-200 text-[#041c3a] hover:bg-[#041c3a] hover:text-white transition-colors px-2.5"
-            onClick={() => setCrewDialogOpen(true)}
-            title="Crew beheren"
+            onClick={() => setRollenDialogOpen(true)}
+            title="Rollen beheren"
           >
             <Users className="w-3.5 h-3.5" />
           </Button>
@@ -126,10 +126,10 @@ export function EventCard({ event, onOpen, onAdvanceStatus, onRevertStatus }: Ev
       </Card>
 
       {/* Crew dialog */}
-      <CrewDialog
+      <EventRollenDialog
         event={event}
-        open={crewDialogOpen}
-        onOpenChange={setCrewDialogOpen}
+        open={rollenDialogOpen}
+        onOpenChange={setRollenDialogOpen}
       />
     </>
   );
