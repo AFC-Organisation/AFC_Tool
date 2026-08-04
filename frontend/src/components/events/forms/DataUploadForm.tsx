@@ -176,6 +176,7 @@ export function DataUploadForm({
 
   const regCount = event.registraties?.length ?? 0;
   const fbCount = event.feedback?.length ?? 0;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(manualReg.email);
 
   return (
     <div className="space-y-5">
@@ -464,7 +465,16 @@ export function DataUploadForm({
                 </div>
                 <div className="space-y-1.5">
                   <Label className={labelClass}>Email *</Label>
-                  <Input type="email" value={manualReg.email} onChange={(e) => setManualReg((p) => ({ ...p, email: e.target.value }))} required className={inputClass} />
+                  <Input
+                    type="email"
+                    value={manualReg.email}
+                    onChange={(e) => setManualReg((p) => ({ ...p, email: e.target.value }))}
+                    required
+                    className={inputClass}
+                  />
+                  {manualReg.email && !emailValid && (
+                    <p className="text-[11px] text-red-500">Ongeldig e-mailadres.</p>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -483,10 +493,22 @@ export function DataUploadForm({
                 Annuleren
               </Button>
               <Button
-                disabled={!manualReg.email}
                 onClick={async () => {
-                  const ok = await onAddManualRegistration(manualReg);
-                  if (ok) { setShowManualReg(false); setManualReg({ naam: '', email: '', faculteit: '', studiejaar: '' }); }
+                  const clamp = (v: string) => {
+                    const n = Number(v);
+                    if (!v || isNaN(n) || n < 1 || n > 5) return undefined;
+                    return n;
+                  };
+                  const ok = await onAddManualFeedback({
+                    email: manualFb.email || undefined,
+                    schaal_1: clamp(manualFb.schaal_1),
+                    schaal_2: clamp(manualFb.schaal_2),
+                    schaal_3: clamp(manualFb.schaal_3),
+                    wat_kon_beter: manualFb.wat_kon_beter || undefined,
+                    favo_onderdeel: manualFb.favo_onderdeel || undefined,
+                    andere_opmerkingen: manualFb.andere_opmerkingen || undefined,
+                  });
+                  if (ok) { setShowManualFb(false); }
                 }}
                 className="bg-[#041c3a] hover:bg-[#041c3a]/90 text-white font-semibold"
               >
@@ -515,8 +537,15 @@ export function DataUploadForm({
               <div className="grid grid-cols-3 gap-3">
                 {(['schaal_1', 'schaal_2', 'schaal_3'] as const).map((k, i) => (
                   <div key={k} className="space-y-1.5">
-                    <Label className={labelClass}>Vraag {i + 1} (1-10)</Label>
-                    <Input type="number" min="1" max="10" value={manualFb[k]} onChange={(e) => setManualFb((p) => ({ ...p, [k]: e.target.value }))} className={inputClass} />
+                    <Label className={labelClass}>Vraag {i + 1} (1-5)</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="5"
+                      value={manualFb[k]}
+                      onChange={(e) => setManualFb((p) => ({ ...p, [k]: e.target.value }))}
+                      className={inputClass}
+                    />
                   </div>
                 ))}
               </div>
@@ -538,17 +567,13 @@ export function DataUploadForm({
                 Annuleren
               </Button>
               <Button
+                disabled={!manualReg.email || !emailValid}
                 onClick={async () => {
-                  const ok = await onAddManualFeedback({
-                    email: manualFb.email || undefined,
-                    schaal_1: manualFb.schaal_1 ? Number(manualFb.schaal_1) : undefined,
-                    schaal_2: manualFb.schaal_2 ? Number(manualFb.schaal_2) : undefined,
-                    schaal_3: manualFb.schaal_3 ? Number(manualFb.schaal_3) : undefined,
-                    wat_kon_beter: manualFb.wat_kon_beter || undefined,
-                    favo_onderdeel: manualFb.favo_onderdeel || undefined,
-                    andere_opmerkingen: manualFb.andere_opmerkingen || undefined,
+                  const ok = await onAddManualRegistration({
+                    ...manualReg,
+                    naam: manualReg.naam.trim(),
                   });
-                  if (ok) { setShowManualFb(false); }
+                  if (ok) { setShowManualReg(false); setManualReg({ naam: '', email: '', faculteit: '', studiejaar: '' }); }
                 }}
                 className="bg-[#041c3a] hover:bg-[#041c3a]/90 text-white font-semibold"
               >

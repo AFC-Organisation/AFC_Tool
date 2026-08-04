@@ -25,7 +25,7 @@ export function EventRollenDialog({ event, open, onOpenChange }: EventRollenDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden rounded-2xl">
+      <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden rounded-2xl">
         <DialogHeader className="px-5 pt-5 pb-4 border-b border-slate-100">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#041c3a] flex items-center justify-center shrink-0">

@@ -5,6 +5,7 @@ import {
   BarChart3,
   GraduationCap,
   Zap,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,11 @@ const navItems = [
     label: 'Academiejaren',
     href: '/academiejaren',
     icon: GraduationCap,
+  },
+  {
+    label: 'Prullenbak',
+    href: '/prullenbak',
+    icon: Trash2,
   },
 ];
 

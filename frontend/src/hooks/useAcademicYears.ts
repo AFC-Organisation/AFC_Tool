@@ -17,10 +17,11 @@ export function useAcademicYears() {
     setLoading(true);
     setError(null);
 
-    const { data: yearsData, error: yearsErr } = await supabase
-      .from('academic_years')
-      .select('*')
-      .order('start_datum', { ascending: false });
+  const { data: yearsData, error: yearsErr } = await supabase
+    .from('academic_years')
+    .select('*')
+    .is('deleted_at', null)
+    .order('start_datum', { ascending: false });
 
     if (yearsErr) {
       setError(yearsErr.message);
@@ -35,6 +36,7 @@ export function useAcademicYears() {
           .from('events')
           .select('*, registrations(count)')
           .eq('academic_year_id', year.id)
+          .is('deleted_at', null)
           .order('event_datum', { ascending: true });
 
         const eventsWithCount: EventWithRegistrations[] = (events ?? []).map((e) => ({
@@ -197,4 +199,59 @@ export function useEventDetail() {
   const clear = useCallback(() => setEvent(null), []);
 
   return { event, loading, load, clear };
+
+  
+}
+
+// ── Soft delete / restore an academic year ────────────────────────────────
+export function useDeleteAcademicYear() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const softDelete = async (yearId: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    const { error: err } = await supabase
+      .from('academic_years')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', yearId);
+    setLoading(false);
+    if (err) {
+      setError(err.message);
+      return false;
+    }
+    return true;
+  };
+
+  const restore = async (yearId: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    const { error: err } = await supabase
+      .from('academic_years')
+      .update({ deleted_at: null })
+      .eq('id', yearId);
+    setLoading(false);
+    if (err) {
+      setError(err.message);
+      return false;
+    }
+    return true;
+  };
+
+  const permanentlyDelete = async (yearId: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    const { error: err } = await supabase
+      .from('academic_years')
+      .delete()
+      .eq('id', yearId);
+    setLoading(false);
+    if (err) {
+      setError(err.message);
+      return false;
+    }
+    return true;
+  };
+
+  return { softDelete, restore, permanentlyDelete, loading, error };
 }

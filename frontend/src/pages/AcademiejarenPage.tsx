@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { GraduationCap, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAcademicYears, useCreateAcademicYear, useSetCurrentYear,useEventDetail } from '../hooks/useAcademicYears';
+import { useAcademicYears, useCreateAcademicYear, useSetCurrentYear, useDeleteAcademicYear, useEventDetail } from '../hooks/useAcademicYears';
 import { AcademicYearCard } from '../components/academicYear/AcademicYearCard';
 import { CreateAcademicYearDialog } from '../components/academicYear/CreateAcademicYearDialog';
 import { EventDetailSheet } from '../components/academicYear/EventDetailSheet';
@@ -13,6 +13,7 @@ export default function AcademiejarenPage() {
   const { years, loading, error, refetch } = useAcademicYears();
   const { create, loading: createLoading } = useCreateAcademicYear();
   const { setCurrent, loading: setCurrentLoading } = useSetCurrentYear();
+  const { softDelete } = useDeleteAcademicYear();
 
   const { event: selectedEvent, loading: eventLoading, load: loadEvent, clear: clearEvent } = useEventDetail();
   const [pendingSetCurrentYear, setPendingSetCurrentYear] = useState<AcademicYearWithEvents | null>(null);
@@ -31,6 +32,11 @@ export default function AcademiejarenPage() {
       setPendingSetCurrentYear(null);
       refetch();
     }
+  }
+
+  async function handleDeleteYear(yearId: string) {
+    await softDelete(yearId);
+    refetch();
   }
 
   return (
@@ -123,6 +129,7 @@ export default function AcademiejarenPage() {
                   if (y) setPendingSetCurrentYear(y);
                 }}
                 onViewEvent={(e) => loadEvent(e.id)}
+                onDelete={handleDeleteYear}
               />
             ))}
           </div>

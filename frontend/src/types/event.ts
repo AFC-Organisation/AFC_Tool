@@ -81,6 +81,7 @@ export interface Event {
   created_by: string;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
   // Relations
   sprekers?: Spreker[];
   registraties?: Registration[];
@@ -102,7 +103,8 @@ export interface EventRol {
   event_id: string;
   naam: string;
   beschrijving: string | null;
-  uren: string;
+  start_uur: string | null;
+  eind_uur: string | null;
   plaatsen: number;
   is_default: boolean;
   created_at: string;
@@ -111,7 +113,8 @@ export interface EventRol {
 export interface EventRolFormData {
   naam: string;
   beschrijving: string;
-  uren: string;
+  start_uur: string | null;
+  eind_uur: string | null;
   plaatsen: number;
 }
 

@@ -28,7 +28,6 @@ export function DeleteEventDialog({
   return (
     <AlertDialog open={open} onOpenChange={(v) => !v && onCancel()}>
       <AlertDialogContent className="border-slate-200 shadow-2xl max-w-md">
-        {/* Top accent */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 to-red-400 rounded-t-lg" />
 
         <AlertDialogHeader className="pt-2">
@@ -37,15 +36,13 @@ export function DeleteEventDialog({
               <Trash2 className="w-4 h-4 text-red-500" />
             </div>
             <AlertDialogTitle className="text-[#041c3a] font-black text-lg leading-tight">
-              Evenement verwijderen?
+              Evenement naar prullenbak?
             </AlertDialogTitle>
           </div>
           <AlertDialogDescription className="text-slate-500 text-sm leading-relaxed pl-12">
-            Je staat op het punt{' '}
-            <span className="font-semibold text-slate-700">"{eventTitel}"</span> permanent te
-            verwijderen. Alle gekoppelde sprekers, inschrijvingen en feedback worden
-            ook verwijderd.{' '}
-            <span className="text-red-500 font-semibold">Dit kan niet ongedaan worden gemaakt.</span>
+            <span className="font-semibold text-slate-700">"{eventTitel}"</span> wordt
+            verplaatst naar de prullenbak. Je kan het daar nog terugzetten of
+            definitief verwijderen.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -62,7 +59,7 @@ export function DeleteEventDialog({
             className="bg-red-500 hover:bg-red-600 text-white font-semibold gap-2 border-0"
           >
             <Trash2 className="w-4 h-4" />
-            {loading ? 'Verwijderen...' : 'Ja, verwijderen'}
+            {loading ? 'Verplaatsen...' : 'Naar prullenbak'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -117,9 +117,17 @@ export function CrewRollenBeheer({ eventId, isAdmin }: CrewRollenBeheerProps) {
   }
 
   async function saveRol() {
-    if (!rolForm.naam) return;
+    const trimmedNaam = rolForm.naam.trim();
+    if (!trimmedNaam) return;
+    const duplicate = rollen.some(
+      (r) => r.naam.toLowerCase() === trimmedNaam.toLowerCase() && r.id !== editRol?.id
+    );
+    if (duplicate) {
+      alert('Er bestaat al een rol met deze naam.');
+      return;
+    }
     setSavingRol(true);
-    const payload = { naam: rolForm.naam, beschrijving: rolForm.beschrijving || null };
+    const payload = { naam: trimmedNaam, beschrijving: rolForm.beschrijving.trim() || null };
     if (editRol) {
       await supabase.from('crew_rollen').update(payload).eq('id', editRol.id);
     } else {

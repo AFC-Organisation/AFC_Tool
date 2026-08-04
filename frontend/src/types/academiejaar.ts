@@ -10,6 +10,7 @@ export interface AcademicYear {
   eind_datum: string;
   is_huidig: boolean;
   created_at: string;
+  deleted_at?: string | null;
 }
 
 export interface Event {

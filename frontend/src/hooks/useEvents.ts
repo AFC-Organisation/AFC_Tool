@@ -34,6 +34,7 @@ export function useEvents(academicYearId?: string) {
           event_domains(domain_id, domains(*))
         `)
         .eq('academic_year_id', academicYearId)
+        .is('deleted_at', null)
         .order('event_datum', { ascending: true });
 
       if (error) throw error;
@@ -126,7 +127,6 @@ export function useEventMutations() {
     try {
       const { sprekers, domain_ids, ...eventData } = formData;
 
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Niet ingelogd');
 
@@ -154,12 +154,11 @@ export function useEventMutations() {
         .single();
 
       if (eventError) throw eventError;
-      
+
       await supabase.from('event_rollen').insert({
         event_id: event.id,
         naam: 'Aanwezig',
         beschrijving: null,
-        uren: '',
         plaatsen: 999,
         is_default: true,
       });
@@ -230,7 +229,46 @@ export function useEventMutations() {
     }
   };
 
+  /** Verplaatst het event naar de prullenbak (soft delete) i.p.v. het echt te verwijderen. */
   const deleteEvent = async (id: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      return true;
+    } catch (err: any) {
+      setError(err.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /** Zet een event terug uit de prullenbak. */
+  const restoreEvent = async (id: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ deleted_at: null })
+        .eq('id', id);
+      if (error) throw error;
+      return true;
+    } catch (err: any) {
+      setError(err.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /** Verwijdert een event definitief — enkel bedoeld voor items die al in de prullenbak zitten. */
+  const permanentlyDeleteEvent = async (id: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
     try {
@@ -326,7 +364,7 @@ export function useEventMutations() {
         .from('registrations')
         .upsert(rows, {
           onConflict: 'event_id,ticket_code',
-          ignoreDuplicates: false, 
+          ignoreDuplicates: false,
         });
 
       if (error) {
@@ -429,7 +467,7 @@ export function useEventMutations() {
       if (fnError) throw fnError;
 
       const allTickets = data.data;
-      
+
       const rows = allTickets.map((t: any) => {
         const questions = t.custom_questions || [];
         const getAnswer = (q: string) =>
@@ -447,8 +485,8 @@ export function useEventMutations() {
           faculteit: getAnswer('faculteit') || null,
           hoe_gevonden: getAnswer('gevonden') || getAnswer('via') || null,
           studiejaar: getAnswer('studiejaar') || null,
-          ingediend_op: t.created_at          
-            ? new Date(t.created_at * 1000).toISOString()  
+          ingediend_op: t.created_at
+            ? new Date(t.created_at * 1000).toISOString()
             : null,
         };
       });
@@ -473,6 +511,8 @@ export function useEventMutations() {
     createEvent,
     updateEvent,
     deleteEvent,
+    restoreEvent,
+    permanentlyDeleteEvent,
     advanceStatus,
     importTallyRegistrations,
     importTicketTailorRegistrations,

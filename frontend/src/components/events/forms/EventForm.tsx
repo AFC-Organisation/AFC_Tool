@@ -12,13 +12,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { Plus, Trash2, Save, User, Package, Users, Check, X, Pencil, Archive } from 'lucide-react';
 import type { Event, EventFormData, EventType, SprekerRol } from '../../../types/event';
 import { EventRollenManager } from './EventRollenManager';
@@ -163,11 +156,31 @@ export function EventForm({
   const removeSpreker = (idx: number) =>
     setSprekers((prev) => prev.filter((_, i) => i !== idx));
 
+  const titelValid = titel.trim().length > 0;
+  const maxDeelnemersValid = maxDeelnemers === '' || Number(maxDeelnemers) >= 0;
+  const tijdVolgordeValid =
+    !startTijd || !eindeTijd || eindeTijd > startTijd;
+  const deurenValid =
+    !deurenOpen || !startTijd || deurenOpen <= startTijd;
+  const sprekerEmailsValid = sprekers.every(
+    (s) => !s.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.email)
+  );
+  const sprekerNamenValid = sprekers.every((s) => s.naam.trim().length > 0);
+
+  const formValid =
+    titelValid &&
+    maxDeelnemersValid &&
+    tijdVolgordeValid &&
+    deurenValid &&
+    sprekerEmailsValid &&
+    sprekerNamenValid;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formValid) return;
     await onSave({
       type,
-      titel,
+      titel: titel.trim(),
       beschrijving_website: beschrijvingWebsite || undefined,
       beschrijving_sociaal: beschrijvingSociaal || undefined,
       event_datum: eventDatum || undefined,
@@ -176,7 +189,7 @@ export function EventForm({
       deuren_open: deurenOpen || undefined,
       start_tijd: startTijd || undefined,
       einde_tijd: eindeTijd || undefined,
-      sprekers: sprekers.map((s, i) => ({ ...s, volgorde: i })),
+      sprekers: sprekers.map((s, i) => ({ ...s, naam: s.naam.trim(), volgorde: i })),
     });
   };
 
@@ -305,7 +318,12 @@ export function EventForm({
             />
           </div>
         </div>
-
+        {!deurenValid && (
+          <p className="text-xs text-red-500">Deuren open moet vóór of gelijk aan starttijd zijn.</p>
+        )}
+        {!tijdVolgordeValid && (
+          <p className="text-xs text-red-500">Eindtijd moet na starttijd liggen.</p>
+        )}
         <div className="space-y-1.5">
           <Label className={labelClass} htmlFor="max">
             Max. deelnemers
@@ -319,6 +337,9 @@ export function EventForm({
             min="0"
             className={inputClass}
           />
+          {!maxDeelnemersValid && (
+            <p className="text-[11px] text-red-500">Max. deelnemers mag niet negatief zijn.</p>
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -434,6 +455,9 @@ export function EventForm({
                     placeholder="email@voorbeeld.be"
                     className={inputClass}
                   />
+                  {spreker.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(spreker.email) && (
+                    <p className="text-[11px] text-red-500">Ongeldig e-mailadres.</p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label className={labelClass}>Telefoon</Label>
@@ -488,7 +512,7 @@ export function EventForm({
         </Button>
         <Button
           type="submit"
-          disabled={loading || !titel}
+          disabled={loading || !formValid}
           className="bg-[#041c3a] hover:bg-[#041c3a]/90 text-white gap-2 font-semibold"
         >
           <Save className="w-4 h-4" />

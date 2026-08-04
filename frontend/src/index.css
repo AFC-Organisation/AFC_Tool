@@ -120,7 +120,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    /* bg-background removed — pages control their own background */
+    /* bg-background removed pages control their own background */
     @apply text-foreground;
   }
 }

@@ -9,6 +9,7 @@ import '../styles/globals.css'
 import AcademiejarenPage from "./pages/AcademiejarenPage"
 import EvenementenPage from "./pages/EvenementenPage"
 import DataAnalysePage from "./pages/DataAnalysePage"
+import TrashPage from "./pages/TrashPage"
 
 
 const router = createBrowserRouter([
@@ -38,6 +39,10 @@ const router = createBrowserRouter([
       {
         path: "/analyse", 
         element: <DataAnalysePage />,
+      },
+      {
+        path: "/prullenbak",
+        element: <TrashPage />,
       },      
     ],
   },

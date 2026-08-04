@@ -83,7 +83,8 @@ export function useEventRolMutations() {
         event_id: eventId,
         naam: input.naam,
         beschrijving: input.beschrijving || null,
-        uren: input.uren,
+        start_uur: input.start_uur,
+        eind_uur: input.eind_uur,
         plaatsen: input.plaatsen,
       });
       if (error) throw error;
@@ -105,7 +106,8 @@ export function useEventRolMutations() {
         .update({
           naam: input.naam,
           beschrijving: input.beschrijving || null,
-          uren: input.uren,
+          start_uur: input.start_uur,
+          eind_uur: input.eind_uur,
           plaatsen: input.plaatsen,
         })
         .eq('id', rolId);

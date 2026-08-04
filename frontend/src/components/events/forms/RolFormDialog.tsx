@@ -27,7 +27,8 @@ interface RolFormDialogProps {
 export function RolFormDialog({ open, onOpenChange, initial, onSave }: RolFormDialogProps) {
   const [naam, setNaam] = useState('');
   const [beschrijving, setBeschrijving] = useState('');
-  const [uren, setUren] = useState('');
+  const [startUur, setStartUur] = useState('');
+  const [eindUur, setEindUur] = useState('');
   const [plaatsen, setPlaatsen] = useState('1');
   const [saving, setSaving] = useState(false);
 
@@ -35,23 +36,34 @@ export function RolFormDialog({ open, onOpenChange, initial, onSave }: RolFormDi
     if (open) {
       setNaam(initial?.naam ?? '');
       setBeschrijving(initial?.beschrijving ?? '');
-      setUren(initial?.uren ?? '');
+      setStartUur(initial?.start_uur?.slice(0, 5) ?? '');
+      setEindUur(initial?.eind_uur?.slice(0, 5) ?? '');
       setPlaatsen(initial?.plaatsen?.toString() ?? '1');
     }
   }, [open, initial]);
 
-  const valid = !!naam && !!uren && Number(plaatsen) > 0;
+  const plaatsenNum = Number(plaatsen);
+  const naamValid = naam.trim().length > 0;
+  const plaatsenValid = Number.isInteger(plaatsenNum) && plaatsenNum > 0;
+  const urenValid = !startUur || !eindUur || eindUur > startUur;
+  const valid = naamValid && plaatsenValid && urenValid;
 
   async function handleSave() {
     if (!valid) return;
     setSaving(true);
-    await onSave({ naam, beschrijving, uren, plaatsen: Number(plaatsen) });
+    await onSave({
+      naam: naam.trim(),
+      beschrijving: beschrijving.trim(),
+      start_uur: startUur || null,
+      eind_uur: eindUur || null,
+      plaatsen: plaatsenNum,
+    });
     setSaving(false);
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="text-[#041c3a] font-bold">
             {initial ? 'Rol bewerken' : 'Nieuwe rol aanmaken'}
@@ -69,15 +81,26 @@ export function RolFormDialog({ open, onOpenChange, initial, onSave }: RolFormDi
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label className={labelClass}>
-                <Clock className="w-3 h-3" /> Uren *
+                <Clock className="w-3 h-3" /> Start
               </Label>
               <Input
-                value={uren}
-                onChange={(e) => setUren(e.target.value)}
-                placeholder="17:00 of 20:00-23:30"
+                type="time"
+                value={startUur}
+                onChange={(e) => setStartUur(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className={labelClass}>
+                <Clock className="w-3 h-3" /> Einde
+              </Label>
+              <Input
+                type="time"
+                value={eindUur}
+                onChange={(e) => setEindUur(e.target.value)}
                 className={inputClass}
               />
             </div>
@@ -88,13 +111,19 @@ export function RolFormDialog({ open, onOpenChange, initial, onSave }: RolFormDi
               <Input
                 type="number"
                 min={1}
+                step={1}
                 value={plaatsen}
                 onChange={(e) => setPlaatsen(e.target.value)}
                 className={inputClass}
               />
             </div>
           </div>
-
+          {!urenValid && (
+            <p className="text-xs text-red-500 -mt-2">Einduur moet na startuur liggen.</p>
+          )}
+          {!plaatsenValid && plaatsen !== '' && (
+            <p className="text-xs text-red-500 -mt-2">Plaatsen moet een heel getal groter dan 0 zijn.</p>
+          )}
           <div className="space-y-1.5">
             <Label className={labelClass}>Beschrijving</Label>
             <Textarea
