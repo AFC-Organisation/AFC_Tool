@@ -255,3 +255,43 @@ export function useDeleteAcademicYear() {
 
   return { softDelete, restore, permanentlyDelete, loading, error };
 }
+
+// ── Export unique registration emails for an academic year ───────────────────
+export function useExportEmails() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const exportEmails = async (eventIds: string[]): Promise<string[]> => {
+    setLoading(true);
+    setError(null);
+
+    if (eventIds.length === 0) {
+      setLoading(false);
+      return [];
+    }
+
+    const { data, error: err } = await supabase
+      .from('registrations')
+      .select('email')
+      .in('event_id', eventIds);
+
+    setLoading(false);
+
+    if (err) {
+      setError(err.message);
+      return [];
+    }
+
+    const seen = new Map<string, string>();
+    for (const row of data ?? []) {
+      const raw = (row.email as string | null)?.trim();
+      if (!raw) continue;
+      const key = raw.toLowerCase();
+      if (!seen.has(key)) seen.set(key, raw);
+    }
+
+    return Array.from(seen.values()).sort((a, b) => a.localeCompare(b));
+  };
+
+  return { exportEmails, loading, error };
+}

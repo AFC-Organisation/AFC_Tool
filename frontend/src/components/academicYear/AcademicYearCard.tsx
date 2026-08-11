@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Flame, MoreHorizontal, CheckCheck, Search, MapPin, Users, Clock, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Flame, MoreHorizontal, CheckCheck, Search, MapPin, Users, Clock, Trash2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -27,6 +27,7 @@ interface AcademicYearCardProps {
   onSetCurrent: (yearId: string) => void;
   onViewEvent: (event: EventWithRegistrations) => void;
   onDelete: (yearId: string) => Promise<void> | void;
+  onExportEmails: (year: AcademicYearWithEvents) => void;
 }
 
 // Academiejaar loopt vast van september (8) t/m mei (4), kalenderjaar-onafhankelijk
@@ -116,7 +117,7 @@ function CompactEventCard({ event, onView }: { event: EventWithRegistrations; on
   );
 }
 
-export function AcademicYearCard({ year, defaultOpen = false, onSetCurrent, onViewEvent, onDelete }: AcademicYearCardProps) {
+export function AcademicYearCard({ year, defaultOpen = false, onSetCurrent, onViewEvent, onDelete, onExportEmails }: AcademicYearCardProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [search, setSearch] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -218,6 +219,14 @@ export function AcademicYearCard({ year, defaultOpen = false, onSetCurrent, onVi
                     Instellen als huidig
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onExportEmails(year)}
+                  className="text-[#041c3a] focus:bg-[#041c3a]/5 focus:text-[#041c3a]"
+                >
+                  <Download className="h-4 w-4 mr-2 text-[#ed6425]" />
+                  Exporteer e-mails
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setDeleteDialogOpen(true)}

@@ -60,7 +60,7 @@ interface EventFormProps {
 const ROL_OPTIONS: { value: SprekerRol; label: string }[] = [
   { value: 'spreker', label: 'Spreker' },
   { value: 'moderator', label: 'Moderator' },
-  { value: 'facilitator', label: 'Facilitator' },
+  { value: 'panellid', label: 'panellid' },
 ];
 
 // ─── Shared style tokens ──────────────────────────────────────────────────────
@@ -489,7 +489,7 @@ export function EventForm({
 
       {/* ── Crew — only shown when editing an existing event ── */}
       {event?.id && userId && (
-        <Section icon={<Users className="w-3.5 h-3.5" />} title="Rollen">
+        <Section icon={<Users className="w-3.5 h-3.5" />} title="Shiftenlijst">
           <EventRollenManager
             eventId={event.id}
             eventStatus={event.status}

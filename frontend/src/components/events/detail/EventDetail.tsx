@@ -264,7 +264,7 @@ export function EventDetail({ event }: EventDetailProps) {
       {rollen.length > 0 && (
         <SectionCard
           icon={<Users className="w-3.5 h-3.5 text-[#ed6425]" />}
-          title="Rollen"
+          title="Shiftenlijst"
           badge={rollen.reduce((sum, r) => sum + (r.toegewezen?.length ?? 0), 0)}
         >
           <div className="space-y-3">

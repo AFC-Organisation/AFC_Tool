@@ -129,7 +129,6 @@ const ROL_LABELS: Record<string, string> = {
   panellid:    'Panellid',
   gastspreker: 'Gastspreker',
   begeleider:  'Begeleider',
-  facilitator: 'Facilitator',
 };
 
 const RATING_LABELS: Record<string, string> = {
@@ -370,7 +369,7 @@ function CrewSection({ rollen }: { rollen: EventRol[] }) {
   return (
     <div>
       <SectionTitle icon={<Users className="h-4 w-4" />} badge={totalAssigned}>
-        Rollen
+        Shiftenlijst
       </SectionTitle>
 
       <div className="grid gap-3 sm:grid-cols-2">

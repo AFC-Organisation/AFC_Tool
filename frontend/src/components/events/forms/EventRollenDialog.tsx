@@ -32,7 +32,7 @@ export function EventRollenDialog({ event, open, onOpenChange }: EventRollenDial
               <Users className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-base font-bold text-[#041c3a] leading-tight">Rollen</DialogTitle>
+              <DialogTitle className="text-base font-bold text-[#041c3a] leading-tight">Shiftenlijst</DialogTitle>
               <p className="text-xs text-slate-400 mt-0.5 truncate">{event.titel}</p>
             </div>
             {isAdmin && (

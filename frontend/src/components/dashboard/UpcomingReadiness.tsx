@@ -14,6 +14,7 @@ interface UpcomingEvent {
   event_datum: string | null;
   locatie: string | null;
   beschrijving_website: string | null;
+  beschrijving_sociaal: string | null;
   max_deelnemers: number | null;
   start_tijd: string | null;
   registratie_aantal: number;
@@ -39,11 +40,12 @@ const FIELDS_TO_CHECK: { key: keyof UpcomingEvent; label: string; critical: bool
   { key: 'event_datum',           label: 'Datum',          critical: true  },
   { key: 'locatie',               label: 'Locatie',        critical: true  },
   { key: 'start_tijd',            label: 'Starttijd',      critical: true  },
-  { key: 'beschrijving_website',  label: 'Beschrijving',   critical: false },
+  { key: 'beschrijving_website',  label: 'Beschrijving website',   critical: false },
+  { key: 'beschrijving_sociaal',  label: 'Beschrijving Sociale media',critical: false },
   { key: 'max_deelnemers',        label: 'Max. deelnemers',critical: false },
 ];
 
-function computeReadiness(event: UpcomingEvent, today: Date): ReadinessResult {
+function computeReadiness(event: UpcomingEvent, today: Date, hasSpreker: boolean): ReadinessResult {
   const eventDate = event.event_datum ? new Date(event.event_datum) : null;
   const daysUntil = eventDate
     ? Math.ceil((eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
@@ -57,21 +59,22 @@ function computeReadiness(event: UpcomingEvent, today: Date): ReadinessResult {
     if (isEmpty) missingFields.push({ label: field.label, critical: field.critical });
   }
 
-  // Also flag if still "concept" and event is soon
   if (event.status === 'concept') {
-    missingFields.push({ label: 'Status nog concept', critical: daysUntil <= 7 });
+    missingFields.push({ label: 'Voorbereid Status', critical: daysUntil <= 5 });
   }
 
-  // No registrations yet and event is within 14 days
-  if (event.registratie_aantal === 0 && daysUntil <= 14) {
-    missingFields.push({ label: 'Nog geen inschrijvingen', critical: daysUntil <= 5 });
+  // Nieuwe check: geen spreker toegewezen
+  if (!hasSpreker) {
+    missingFields.push({ label: 'Spreker', critical: true });
   }
 
-  const totalChecks = FIELDS_TO_CHECK.length + 1; // +1 for status
+  const totalChecks = FIELDS_TO_CHECK.length + 2; // +1 status, +1 spreker
   const filled = FIELDS_TO_CHECK.filter((f) => {
     const val = event[f.key];
     return val !== null && val !== undefined && val !== '';
-  }).length + (event.status !== 'concept' ? 1 : 0);
+  }).length
+    + (event.status !== 'concept' ? 1 : 0)
+    + (hasSpreker ? 1 : 0);
   const completionPct = Math.round((filled / totalChecks) * 100);
 
   const hasCritical = missingFields.some((f) => f.critical);
@@ -138,7 +141,6 @@ export function UpcomingReadiness() {
 
       const today = new Date().toISOString().split('T')[0];
 
-      // Fetch upcoming non-complete events + registration count via the view
       const { data } = await supabase
         .from('events_with_registration_count')
         .select('id, titel, status, type, event_datum, locatie, beschrijving_website, max_deelnemers, start_tijd, registratie_aantal, created_by')
@@ -150,13 +152,25 @@ export function UpcomingReadiness() {
 
       if (!data) { setLoading(false); return; }
 
+      const eventIds = (data as UpcomingEvent[]).map((e) => e.id);
+
+      // Welke events hebben al minstens 1 spreker?
+      let sprekerEventIds = new Set<string>();
+      if (eventIds.length > 0) {
+        const { data: sprekersData } = await supabase
+          .from('event_sprekers')
+          .select('event_id')
+          .in('event_id', eventIds);
+
+        sprekerEventIds = new Set((sprekersData ?? []).map((s) => s.event_id));
+      }
+
       const now = new Date();
       now.setHours(0, 0, 0, 0);
 
       const computed = (data as UpcomingEvent[])
-        .map((ev) => computeReadiness(ev, now))
+        .map((ev) => computeReadiness(ev, now, sprekerEventIds.has(ev.id)))
         .sort((a, b) => {
-          // Critical first, then by days until
           const urgencyOrder = { critical: 0, warning: 1, ok: 2 };
           if (urgencyOrder[a.urgencyLevel] !== urgencyOrder[b.urgencyLevel])
             return urgencyOrder[a.urgencyLevel] - urgencyOrder[b.urgencyLevel];

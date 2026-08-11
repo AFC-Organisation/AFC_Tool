@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { GraduationCap, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAcademicYears, useCreateAcademicYear, useSetCurrentYear, useDeleteAcademicYear, useEventDetail } from '../hooks/useAcademicYears';
+import { useAcademicYears, useCreateAcademicYear, useSetCurrentYear, useDeleteAcademicYear, useEventDetail,useExportEmails } from '../hooks/useAcademicYears';
 import { AcademicYearCard } from '../components/academicYear/AcademicYearCard';
 import { CreateAcademicYearDialog } from '../components/academicYear/CreateAcademicYearDialog';
 import { EventDetailSheet } from '../components/academicYear/EventDetailSheet';
 import { SetCurrentYearDialog } from '../components/academicYear/SetCurrentYearDialog';
 import type { AcademicYearWithEvents, CreateAcademicYearInput, EventWithRegistrations } from '../types/academiejaar';
 import { AppLayout } from '../components/layout/AppLayout';
+import { EmailExportDialog } from '../components/academicYear/EmailExportDialog';
 
 export default function AcademiejarenPage() {
   const { years, loading, error, refetch } = useAcademicYears();
@@ -19,6 +20,17 @@ export default function AcademiejarenPage() {
   const [pendingSetCurrentYear, setPendingSetCurrentYear] = useState<AcademicYearWithEvents | null>(null);
 
   const currentYear = years.find((y) => y.is_huidig);
+
+  const { exportEmails, loading: exportLoading } = useExportEmails();
+  const [exportYear, setExportYear] = useState<AcademicYearWithEvents | null>(null);
+  const [exportedEmails, setExportedEmails] = useState<string[]>([]);
+
+  async function handleExportEmails(year: AcademicYearWithEvents) {
+    setExportYear(year);
+    setExportedEmails([]);
+    const emails = await exportEmails(year.events.map((e) => e.id));
+    setExportedEmails(emails);
+  }
 
   async function handleCreate(input: CreateAcademicYearInput) {
     await create(input);
@@ -130,6 +142,7 @@ export default function AcademiejarenPage() {
                 }}
                 onViewEvent={(e) => loadEvent(e.id)}
                 onDelete={handleDeleteYear}
+                onExportEmails={handleExportEmails}
               />
             ))}
           </div>
@@ -138,6 +151,14 @@ export default function AcademiejarenPage() {
         {/* Event detail sheet */}
         <EventDetailSheet event={selectedEvent} onClose={clearEvent} />
 
+        <EmailExportDialog
+          open={!!exportYear}
+          onClose={() => setExportYear(null)}
+          yearName={exportYear?.naam ?? null}
+          emails={exportedEmails}
+          loading={exportLoading}
+        />
+        
         {/* Set current year confirmation */}
         <SetCurrentYearDialog
           year={pendingSetCurrentYear}

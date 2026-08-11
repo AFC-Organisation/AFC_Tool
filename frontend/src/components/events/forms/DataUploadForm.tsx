@@ -494,22 +494,16 @@ export function DataUploadForm({
               </Button>
               <Button
                 onClick={async () => {
-                  const clamp = (v: string) => {
-                    const n = Number(v);
-                    if (!v || isNaN(n) || n < 1 || n > 5) return undefined;
-                    return n;
-                  };
-                  const ok = await onAddManualFeedback({
-                    email: manualFb.email || undefined,
-                    schaal_1: clamp(manualFb.schaal_1),
-                    schaal_2: clamp(manualFb.schaal_2),
-                    schaal_3: clamp(manualFb.schaal_3),
-                    wat_kon_beter: manualFb.wat_kon_beter || undefined,
-                    favo_onderdeel: manualFb.favo_onderdeel || undefined,
-                    andere_opmerkingen: manualFb.andere_opmerkingen || undefined,
+                  if (!manualReg.email || !emailValid) return;
+                  const ok = await onAddManualRegistration({
+                    naam: manualReg.naam || undefined,
+                    email: manualReg.email,
+                    faculteit: manualReg.faculteit || undefined,
+                    studiejaar: manualReg.studiejaar || undefined,
                   });
-                  if (ok) { setShowManualFb(false); }
+                  if (ok) { setShowManualReg(false); }
                 }}
+                disabled={!manualReg.email || !emailValid}
                 className="bg-[#041c3a] hover:bg-[#041c3a]/90 text-white font-semibold"
               >
                 Toevoegen
@@ -567,13 +561,22 @@ export function DataUploadForm({
                 Annuleren
               </Button>
               <Button
-                disabled={!manualReg.email || !emailValid}
                 onClick={async () => {
-                  const ok = await onAddManualRegistration({
-                    ...manualReg,
-                    naam: manualReg.naam.trim(),
+                  const clamp = (v: string) => {
+                    const n = Number(v);
+                    if (!v || isNaN(n) || n < 1 || n > 5) return undefined;
+                    return n;
+                  };
+                  const ok = await onAddManualFeedback({
+                    email: manualFb.email || undefined,
+                    schaal_1: clamp(manualFb.schaal_1),
+                    schaal_2: clamp(manualFb.schaal_2),
+                    schaal_3: clamp(manualFb.schaal_3),
+                    wat_kon_beter: manualFb.wat_kon_beter || undefined,
+                    favo_onderdeel: manualFb.favo_onderdeel || undefined,
+                    andere_opmerkingen: manualFb.andere_opmerkingen || undefined,
                   });
-                  if (ok) { setShowManualReg(false); setManualReg({ naam: '', email: '', faculteit: '', studiejaar: '' }); }
+                  if (ok) { setShowManualFb(false); }
                 }}
                 className="bg-[#041c3a] hover:bg-[#041c3a]/90 text-white font-semibold"
               >

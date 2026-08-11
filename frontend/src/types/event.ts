@@ -2,7 +2,7 @@ export type EventType = 'event' | 'workshop' | 'project';
 
 export type EventStatus = 'concept' | 'voorbereid' | 'afgerond' | 'compleet';
 
-export type SprekerRol = 'spreker' | 'moderator' | 'facilitator';
+export type SprekerRol = 'spreker' | 'moderator' | 'panellid';
 
 export type RegistratieBron = 'tally' | 'tickettailor' | 'manueel';
 
