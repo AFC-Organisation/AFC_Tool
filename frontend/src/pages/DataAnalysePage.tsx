@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BarChart2,
   Loader2,
@@ -42,7 +42,7 @@ import { StudyProgramChart } from '../components/analytics/StudyProgramChart';
 import { RetentionFunnelChart } from '../components/analytics/RetentionFunnelChart';
 import { EventSuccessScoreChart } from '../components/analytics/EventSuccessScoreChart';
 import { ChannelEffectivenessChart } from '../components/analytics/ChannelEffectivenessChart';
-
+import { EventMultiSelectFilter } from '../components/analytics/EventMultiSelectFilter';
 import {
   computeKPIs,
   computeFacultyDistribution,
@@ -92,29 +92,38 @@ export default function DataAnalysePage() {
     error,
     refetch,
   } = useAnalytics();
-
+  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
+  const filteredEvents = useMemo(
+  () => selectedEventIds.length === 0
+    ? events
+    : events.filter((e) => selectedEventIds.includes(e.id)),
+  [events, selectedEventIds]
+  );
   // ── Computed data ─────────────────────────────────────────────────────────
-  const kpis             = useMemo(() => computeKPIs(events), [events]);
-  const facultyData      = useMemo(() => computeFacultyDistribution(events, 10), [events]);
-  const howFoundData     = useMemo(() => computeHowFoundDistribution(events), [events]);
-  const studyYearData    = useMemo(() => computeStudyYearDistribution(events), [events]);
-  const sourceData       = useMemo(() => computeSourceDistribution(events), [events]);
-  const checkInData      = useMemo(() => computeEventCheckInRates(events), [events]);
-  const insights         = useMemo(() => generateInsights(events, kpis), [events, kpis]);
-  const loyaltyData      = useMemo(() => computeLoyaltyData(events), [events]);
-  const timingData       = useMemo(() => computeTimingData(events), [events]);
-  const uniqueData       = useMemo(() => computeUniqueAttendeesData(events), [events]);
-  const funFacts         = useMemo(() => computeFunFacts(events, loyaltyData, timingData), [events, loyaltyData, timingData]);
-  const emailDomains     = useMemo(() => computeEmailDomains(events), [events]);
-  const studyProgramData = useMemo(() => computeStudyProgramDistribution(events, 20), [events]);
-  const retentionFunnel  = useMemo(() => computeRetentionFunnel(events), [events]);
-  const successScores    = useMemo(() => computeEventSuccessScores(events), [events]);
-  const channelData      = useMemo(() => computeChannelEffectiveness(events), [events]);
+  const kpis             = useMemo(() => computeKPIs(filteredEvents), [filteredEvents]);
+  const facultyData      = useMemo(() => computeFacultyDistribution(filteredEvents, 10), [filteredEvents]);
+  const howFoundData     = useMemo(() => computeHowFoundDistribution(filteredEvents), [filteredEvents]);
+  const studyYearData    = useMemo(() => computeStudyYearDistribution(filteredEvents), [filteredEvents]);
+  const sourceData       = useMemo(() => computeSourceDistribution(filteredEvents), [filteredEvents]);
+  const checkInData      = useMemo(() => computeEventCheckInRates(filteredEvents), [filteredEvents]);
+  const insights         = useMemo(() => generateInsights(filteredEvents, kpis), [filteredEvents, kpis]);
+  const loyaltyData      = useMemo(() => computeLoyaltyData(filteredEvents), [filteredEvents]);
+  const timingData       = useMemo(() => computeTimingData(filteredEvents), [filteredEvents]);
+  const uniqueData       = useMemo(() => computeUniqueAttendeesData(filteredEvents), [filteredEvents]);
+  const funFacts         = useMemo(() => computeFunFacts(filteredEvents, loyaltyData, timingData), [filteredEvents, loyaltyData, timingData]);
+  const emailDomains     = useMemo(() => computeEmailDomains(filteredEvents), [filteredEvents]);
+  const studyProgramData = useMemo(() => computeStudyProgramDistribution(filteredEvents, 20), [filteredEvents]);
+  const retentionFunnel  = useMemo(() => computeRetentionFunnel(filteredEvents), [filteredEvents]);
+  const successScores    = useMemo(() => computeEventSuccessScores(filteredEvents), [filteredEvents]);
+  const channelData      = useMemo(() => computeChannelEffectiveness(filteredEvents), [filteredEvents]);
 
-  const hasData = !loading && events.length > 0;
+  const hasData = !loading && filteredEvents.length > 0;
   const hasNoEvents = !loading && !error && allEvents.length === 0;
-  const hasNoFilteredEvents = !loading && !error && allEvents.length > 0 && events.length === 0;
+  const hasNoFilteredEvents = !loading && !error && allEvents.length > 0 && filteredEvents.length === 0;
 
+  useEffect(() => {
+    setSelectedEventIds([]);
+  }, [selectedYearId, selectedEventType]);
   return (
     <AppLayout title="Data Analyse" subtitle="Strategisch inzicht per academiejaar">
       <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -168,13 +177,21 @@ export default function DataAnalysePage() {
             )}
           </div>
 
-          <div className="w-px h-6 bg-slate-200" />
+        <div className="w-px h-6 bg-slate-200" />
 
-          <EventTypeFilterTabs
-            selected={selectedEventType}
-            onChange={setSelectedEventType}
-            allEvents={allEvents}
-          />
+        <EventTypeFilterTabs
+          selected={selectedEventType}
+          onChange={setSelectedEventType}
+          allEvents={allEvents}
+        />
+
+        <div className="w-px h-6 bg-slate-200" />
+
+        <EventMultiSelectFilter
+          events={events}
+          selectedIds={selectedEventIds}
+          onChange={setSelectedEventIds}
+        />
         </div>
 
         {/* ── Active year banner ───────────────────────────────────────── */}
