@@ -7,8 +7,6 @@ import {
   XCircle, UserCheck, Archive,
 } from 'lucide-react';
 import type { Event } from '../../../types/event';
-import { EventTypeBadge } from '../shared/EventTypeBadge';
-import { EventStatusBadge } from '../shared/EventStatusBadge';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
