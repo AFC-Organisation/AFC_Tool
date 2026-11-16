@@ -233,7 +233,7 @@ export function Sidebar() {
 
         <div className="flex items-center gap-2 px-3">
           <div className="h-1.5 w-1.5 rounded-full bg-[#ed6425]" />
-          <p className="text-[11px] text-white/30">v1.0.1 · Academics for Companies</p>
+          <p className="text-[11px] text-white/30">v1.0.2 · Academics for Companies</p>
         </div>
       </div>
     </aside>
