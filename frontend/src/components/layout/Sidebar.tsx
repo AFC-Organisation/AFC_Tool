@@ -179,12 +179,12 @@ export function Sidebar() {
       </nav>
 
       {/* SharePoint + footer — pinned to bottom */}
-      <div className="mt-auto px-3 pb-3 pt-2 border-t border-white/8">
+      <div className="mt-auto flex flex-col gap-1 px-3 pb-3 pt-2 border-t border-white/8">
         <a
           href={QR_URL_VOORLOPIG}
           target="_blank"
           rel="noopener noreferrer"
-          className="group mb-3 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/55 transition-all duration-150 hover:bg-white/6 hover:text-white"
+          className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/55 transition-all duration-150 hover:bg-white/6 hover:text-white"
         >
           <QRCodeIcon className="h-4 w-4 shrink-0 text-white/40 transition-colors group-hover:text-white" />
           <span className="flex-1">QR-Code Generator</span>
@@ -194,7 +194,7 @@ export function Sidebar() {
           href={SHAREPOINT_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="group mb-3 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/55 transition-all duration-150 hover:bg-white/6 hover:text-white"
+          className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/55 transition-all duration-150 hover:bg-white/6 hover:text-white"
         >
           <SharePointIcon className="h-4 w-4 shrink-0 text-white/40 transition-colors group-hover:text-white" />
           <span className="flex-1">SharePoint</span>
