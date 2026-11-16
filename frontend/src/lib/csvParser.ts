@@ -80,8 +80,24 @@ export function parseTallyCSV(text: string): TallyRegistration[] {
   }));
 }
 
-export function parseTicketTailorCSV(text: string): TicketTailorRegistration[] {
+export function parseTicketTailorCSV(text: string): TicketTailorRegistration[] {  
   const rows = parseCSV(text);
+
+  /** 
+  DEBUGGING
+  console.log('CSV-kolommen:', Object.keys(rows[0] ?? {}));
+
+  console.table(
+  rows.slice(0, 10).map((r) => ({
+    checkedin: r['checkedin'],
+    checked_in: r['checked_in'],
+    resultaat:
+      (r['checkedin'] || r['checked_in'] || '')
+        .trim()
+        .toLowerCase() === 'yes',
+  }))
+);**/
+
   return rows.map((r) => ({
     name: r['name'] || '',
     ticket_type: r['ticket_type'] || '',

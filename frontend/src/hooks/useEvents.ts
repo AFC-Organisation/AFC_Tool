@@ -345,7 +345,7 @@ export function useEventMutations() {
         const row: Record<string, any> = {
           event_id: eventId,
           bron: 'ticket_tailor',
-          checked_in: r.checked_in === 'Yes' || r.checked_in === 'true',
+          checked_in: r.checked_in,
         };
 
         if (r.ticket_code)   row.ticket_code   = r.ticket_code;
