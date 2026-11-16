@@ -53,8 +53,8 @@ export default function AcademiejarenPage() {
 
   return (
     <AppLayout
-      title="Academiejaren Historiek"
-      subtitle="Overzicht van alle jaren"
+      title="Academiejaren (Overview)"
+      subtitle="Hier zie je een overzicht van alle academiejaren, met hun bijhorende events/workshops/projects"
     >
       <div className="p-6 max-w-screen-2xl mx-auto space-y-6">
 

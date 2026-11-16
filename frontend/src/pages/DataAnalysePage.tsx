@@ -131,7 +131,7 @@ export default function DataAnalysePage() {
     setSelectedEventIds([]);
   }, [selectedYearId, selectedEventType]);
   return (
-    <AppLayout title="Data Analyse" subtitle="Strategisch inzicht per academiejaar">
+    <AppLayout title="Analyse (Data)" subtitle="Hier zie je inzichten per academiejaar">
       <div className="p-6 max-w-6xl mx-auto space-y-6">
 
         {/* ── Page header ─────────────────────────────────────────────── */}

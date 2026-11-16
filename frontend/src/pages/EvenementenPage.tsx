@@ -123,7 +123,7 @@ export default function EvenementenPage() {
 
   if (!currentYear) {
     return (
-      <AppLayout title="evenementen overzicht" subtitle="Overzicht van alle evenementen">
+      <AppLayout title="Evenementen" subtitle="Hier zie je een overzicht van alle evenementen">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-12 h-12 rounded-xl bg-[#041c3a]/10 flex items-center justify-center mx-auto mb-3">
@@ -137,7 +137,7 @@ export default function EvenementenPage() {
   }
 
   return (
-    <AppLayout title="evenementen overzicht" subtitle="Overzicht van alle evenementen">
+    <AppLayout title="Evenementen" subtitle="Hier zie je een overzicht van alle evenementen">
       <div className="p-6 max-w-screen-xl mx-auto">
         {/* Page header */}
         <div className="mb-8">

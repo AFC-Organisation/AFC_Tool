@@ -6,8 +6,9 @@ import {
   GraduationCap,
   Zap,
   Trash2,
-  /**Ticket,
-  QrCode,**/
+  Ticket,
+  Mail,
+  /**QrCode,**/
   ExternalLink,
   type LucideIcon,
 } from 'lucide-react';
@@ -16,7 +17,8 @@ import { Badge } from '@/components/ui/badge';
 
 const SHAREPOINT_URL = 'https://afcleuven.sharepoint.com/sites/AFCGent';
 const QR_URL_VOORLOPIG = 'https://qr.afcgent.be'
-/** is even redirect tot het volledig implemented wordt in de tool */
+/** QR URL is even redirect tot het volledig implemented wordt in de tool */
+const SPOTIFY_PLAYLIST_AFC = 'https://open.spotify.com/playlist/4CKGQOJZy2pfHQncS9OAWF?si=65ecc72b80e24718';
 
 type NavItem = {
   label: string;
@@ -50,12 +52,17 @@ const navItems: NavItem[] = [
     label: 'QR Generator',
     href: '/qrgenerator',
     icon: QrCode,
-  },
+  },**/
   {
     label: 'Ticketing',
     href: '/ticketing',
     icon: Ticket,
-  },**/
+  },
+  {
+    label: 'Mailing',
+    href: '/mailing',
+    icon: Mail,
+  },
   {
     label: 'Prullenbak',
     href: '/prullenbak',
@@ -98,6 +105,19 @@ function QRCodeIcon({ className }: { className?: string }) {
       "
     />
   </svg>
+  );
+}
+function SpotifyIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M12 0a12 12 0 1 0 0 24 12 12 0 0 0 0-24zm5.504 17.307a.747.747 0 0 1-1.028.249c-2.815-1.72-6.358-2.11-10.53-1.155a.748.748 0 0 1-.332-1.458c4.566-1.043 8.483-.594 11.643 1.337a.747.747 0 0 1 .247 1.027zm1.469-3.267a.935.935 0 0 1-1.286.308c-3.223-1.981-8.138-2.555-11.95-1.398a.935.935 0 0 1-.542-1.788c4.354-1.321 9.77-.681 13.47 1.593a.935.935 0 0 1 .308 1.285zm.126-3.402C15.235 8.344 8.86 8.133 5.17 9.253a1.122 1.122 0 1 1-.652-2.147c4.236-1.286 11.277-1.038 15.727 1.604a1.122 1.122 0 0 1-1.146 1.928z" />
+    </svg>
   );
 }
 
@@ -181,6 +201,16 @@ export function Sidebar() {
       {/* SharePoint + footer — pinned to bottom */}
       <div className="mt-auto flex flex-col gap-1 px-3 pb-3 pt-2 border-t border-white/8">
         <a
+          href={SPOTIFY_PLAYLIST_AFC}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/55 transition-all duration-150 hover:bg-white/6 hover:text-white"
+        >
+          <SpotifyIcon className="h-4 w-4 shrink-0 text-white/40 transition-colors group-hover:text-white" />
+          <span className="flex-1">Spotify Playlist AFC</span>
+          <ExternalLink className="h-3.5 w-3.5 shrink-0 text-white/25 transition-colors group-hover:text-white/50" />
+        </a>
+        <a
           href={QR_URL_VOORLOPIG}
           target="_blank"
           rel="noopener noreferrer"
@@ -203,7 +233,7 @@ export function Sidebar() {
 
         <div className="flex items-center gap-2 px-3">
           <div className="h-1.5 w-1.5 rounded-full bg-[#ed6425]" />
-          <p className="text-[11px] text-white/30">v1.0.0 · Academics for Companies</p>
+          <p className="text-[11px] text-white/30">v1.0.1 · Academics for Companies</p>
         </div>
       </div>
     </aside>
