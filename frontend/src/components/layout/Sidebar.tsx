@@ -118,7 +118,7 @@ export function Sidebar() {
             AFC
           </span>
           <span className="text-[10px] text-white/40 tracking-widest uppercase leading-tight mt-0.5">
-            Made with <3 by Kasper & Matthias
+            Interne Tool
           </span>
         </div>
       </div>
