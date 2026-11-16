@@ -160,7 +160,7 @@ export interface TicketTailorRegistration {
   ticket_code: string;
   order_id: string;
   status?: string;
-  checked_in: string;
+  checked_in: boolean;
   group_ticket_code?: string;
   faculteit?: string;
   hoe_gevonden?: string;
