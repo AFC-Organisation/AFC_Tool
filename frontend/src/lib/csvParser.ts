@@ -88,7 +88,7 @@ export function parseTicketTailorCSV(text: string): TicketTailorRegistration[] {
     ticket_code: r['ticket_code'] || '',
     order_id: r['order_id'] || '',
     status: r['status'] || '',
-    checked_in: r['checked-in'] || r['checked_in'] || 'No',
+    checked_in: r['checkedin'] || r['checked_in'] || 'No',
     group_ticket_code: r['group_ticket_code'] || '',
     faculteit: r['faculteit'] || '',
     hoe_gevonden: r['hoe_heb_je_deze_activiteit_gevonden_via'] || r['hoe_gevonden'] || '',
