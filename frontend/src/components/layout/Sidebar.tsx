@@ -44,12 +44,12 @@ const navItems: NavItem[] = [
     href: '/academiejaren',
     icon: GraduationCap,
   },
-  {
+  /**{
     label: 'QR Generator',
     href: '/qrgenerator',
     icon: QrCode,
   },
-  /**{
+  {
     label: 'Ticketing',
     href: '/ticketing',
     icon: Ticket,
