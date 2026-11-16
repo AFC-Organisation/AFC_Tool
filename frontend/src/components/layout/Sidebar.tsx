@@ -84,9 +84,8 @@ function QRCodeIcon({ className }: { className?: string }) {
     viewBox="0 0 24 24"
     fill="currentColor"
     className={className}
-    role={title ? "img" : undefined}
-    aria-label={title}
-    aria-hidden={title ? undefined : "true"}
+    role="img"
+    aria-hidden="true"
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
