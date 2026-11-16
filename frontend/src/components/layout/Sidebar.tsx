@@ -188,7 +188,7 @@ export function Sidebar() {
         >
           <QRCodeIcon className="h-4 w-4 shrink-0 text-white/40 transition-colors group-hover:text-white" />
           <span className="flex-1">QR-Code Generator</span>
-          <QRCodeIcon className="h-3.5 w-3.5 shrink-0 text-white/25 transition-colors group-hover:text-white/50" />
+          <ExternalLink className="h-3.5 w-3.5 shrink-0 text-white/25 transition-colors group-hover:text-white/50" />
         </a>
         <a
           href={SHAREPOINT_URL}
