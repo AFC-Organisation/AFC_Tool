@@ -23,9 +23,9 @@ export function AppLayout({ children, title, subtitle }: AppLayoutProps) {
         }}
       />
       {/* Main content: offset for sidebar */}
-      <div className="pl-64">
+      <div className="pl-64 print:pl-0">
         <Header title={title} subtitle={subtitle} />
-        <main className="px-8 py-8">{children}</main>
+        <main className="px-8 py-8 print:px-0">{children}</main>
       </div>
     </div>
   );

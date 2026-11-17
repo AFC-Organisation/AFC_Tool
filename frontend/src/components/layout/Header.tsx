@@ -42,7 +42,7 @@ export function Header({ title, subtitle }: HeaderProps) {
     .slice(0, 2);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-zinc-200/80 bg-white/95 backdrop-blur-sm px-8">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-zinc-200/80 bg-white/95 px-8 backdrop-blur-sm print:hidden">
       {/* Page title */}
       <div className="flex items-center gap-4">
         {/* Orange accent bar */}

@@ -8,7 +8,7 @@ import {
   Trash2,
   Ticket,
   Mail,
-  /**QrCode,**/
+  QrCode,
   ExternalLink,
   type LucideIcon,
 } from 'lucide-react';
@@ -16,8 +16,6 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
 const SHAREPOINT_URL = 'https://afcleuven.sharepoint.com/sites/AFCGent';
-const QR_URL_VOORLOPIG = 'https://qr.afcgent.be'
-/** QR URL is even redirect tot het volledig implemented wordt in de tool */
 const SPOTIFY_PLAYLIST_AFC = 'https://open.spotify.com/playlist/4CKGQOJZy2pfHQncS9OAWF?si=65ecc72b80e24718';
 
 type NavItem = {
@@ -64,6 +62,11 @@ const navItems: NavItem[] = [
     icon: Mail,
   },
   {
+    label: 'QR Generator',
+    href: '/qr',
+    icon: QrCode,
+  },
+  {
     label: 'Prullenbak',
     href: '/prullenbak',
     icon: Trash2,
@@ -85,28 +88,6 @@ function SharePointIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-function QRCodeIcon({ className }: { className?: string }) {
-  return (
-  <svg
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    className={className}
-    role="img"
-    aria-hidden="true"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      fillRule="evenodd"
-      d="
-        M3 3h8v8H3z M5 5v4h4V5z M6 6h2v2H6z
-        M13 3h8v8h-8z M15 5v4h4V5z M16 6h2v2h-2z
-        M3 13h8v8H3z M5 15v4h4v-4z M6 16h2v2H6z
-        M13 13h3v3h-3z M18 13h3v2h-3z M18 17h3v4h-3z M13 18h3v3h-3z
-      "
-    />
-  </svg>
-  );
-}
 function SpotifyIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -123,7 +104,7 @@ function SpotifyIcon({ className }: { className?: string }) {
 
 export function Sidebar() {
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-[#041c3a]">
+    <aside className="fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-[#041c3a] print:hidden">
       {/* Subtle top accent line */}
       <div className="h-0.5 w-full bg-[#ed6425]" />
 
@@ -137,7 +118,7 @@ export function Sidebar() {
             AFC
           </span>
           <span className="text-[10px] text-white/40 tracking-widest uppercase leading-tight mt-0.5">
-            Interne Tool
+            Made with 🧡 by K & M
           </span>
         </div>
       </div>
@@ -208,16 +189,6 @@ export function Sidebar() {
         >
           <SpotifyIcon className="h-4 w-4 shrink-0 text-white/40 transition-colors group-hover:text-white" />
           <span className="flex-1">Spotify Playlist AFC</span>
-          <ExternalLink className="h-3.5 w-3.5 shrink-0 text-white/25 transition-colors group-hover:text-white/50" />
-        </a>
-        <a
-          href={QR_URL_VOORLOPIG}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/55 transition-all duration-150 hover:bg-white/6 hover:text-white"
-        >
-          <QRCodeIcon className="h-4 w-4 shrink-0 text-white/40 transition-colors group-hover:text-white" />
-          <span className="flex-1">QR-Code Generator</span>
           <ExternalLink className="h-3.5 w-3.5 shrink-0 text-white/25 transition-colors group-hover:text-white/50" />
         </a>
         <a

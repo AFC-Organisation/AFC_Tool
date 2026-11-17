@@ -11,6 +11,7 @@ import EvenementenPage from "./pages/EvenementenPage"
 import DataAnalysePage from "./pages/DataAnalysePage"
 import TicketingPage from "./pages/TicketingPage"
 import MailingPage from "./pages/MailingPage"
+import QRPage from "./pages/QRPage"
 import TrashPage from "./pages/TrashPage"
 
 
@@ -49,7 +50,11 @@ const router = createBrowserRouter([
       {
         path: "/mailing",
         element: <MailingPage />,
-      },   
+      },    
+      {
+        path: "/qr",
+        element: <QRPage />,
+      },  
       {
         path: "/prullenbak",
         element: <TrashPage />,
