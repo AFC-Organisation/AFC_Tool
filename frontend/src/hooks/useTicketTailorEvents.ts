@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { fetchTicketTailorEvents } from '@/lib/tickettailor';
 import type { TicketTailorEvent } from '@/types/tickettailor';
 
-export function useTicketTailorEvents() {
+export function useTicketTailorEvents(enabled = true) {
   const [events, setEvents] = useState<TicketTailorEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
@@ -26,8 +26,9 @@ export function useTicketTailorEvents() {
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
     void refetch();
-  }, [refetch]);
+  }, [enabled, refetch]);
 
   return { events, loading, error, refetch };
 }

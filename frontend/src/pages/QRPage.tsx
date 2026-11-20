@@ -5,11 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useTicketTailorEvents } from "@/hooks/useTicketTailorEvents";
 import { cn } from "@/lib/utils";
 import { PREVIEW_SIZE, SAMPLE_DATA, contrastRatio, isLight, normalizeHex } from "@/lib/qr/brand";
 import { exportQr, type ExportExt } from "@/lib/qr/exportQr";
 import { createStyledQr, prepareScan, resolvedEc, toDrawSettings } from "@/lib/qr/options";
-import { readPayload, type Kind, type PayloadFields } from "@/lib/qr/payload";
+import {
+  readPayload,
+  ticketTailorEventLink,
+  type Kind,
+  type PayloadFields,
+} from "@/lib/qr/payload";
 import {
   DEFAULT_APPEARANCE,
   EC_OPTIONS,
@@ -22,6 +28,7 @@ import {
 import type { Appearance, QrDrawSettings } from "@/lib/qr/types";
 import { levelName } from "@/lib/qr/capacity";
 import { logoSizeName, scanSentence, verifyCode } from "@/lib/qr/verify";
+import type { TicketTailorEvent } from "@/types/tickettailor";
 
 const EMPTY_FIELDS: PayloadFields = {
   url: "",
@@ -29,6 +36,7 @@ const EMPTY_FIELDS: PayloadFields = {
   email: "",
   emailSubject: "",
   emailBody: "",
+  ticketTailorEventId: "",
 };
 
 const KINDS: { id: Kind; label: string }[] = [
@@ -38,6 +46,7 @@ const KINDS: { id: Kind; label: string }[] = [
   { id: "event", label: "Event" },
   { id: "workshop", label: "Workshop" },
   { id: "project", label: "Project" },
+  { id: "tickettailor", label: "TicketTailor" },
 ];
 
 type Tone = "ok" | "warn" | "muted" | "hint" | "error";
@@ -124,6 +133,17 @@ function HexColorField({
   );
 }
 
+function formatTtOptionLabel(event: TicketTailorEvent) {
+  const date = event.start?.date
+    ? new Intl.DateTimeFormat("nl-BE", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }).format(new Date(event.start.iso || `${event.start.date}T12:00:00`))
+    : null;
+  return date ? `${event.name} · ${date}` : event.name;
+}
+
 export default function QRPage() {
   const [kind, setKind] = useState<Kind>(() => loadSettings()?.kind ?? "url");
   const [fields, setFields] = useState<PayloadFields>(EMPTY_FIELDS);
@@ -140,6 +160,45 @@ export default function QRPage() {
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState<{ tone: Tone; text: string } | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
+
+  const ttEnabled = kind === "tickettailor";
+  const {
+    events: ttEvents,
+    loading: ttLoading,
+    error: ttError,
+    refetch: refetchTt,
+  } = useTicketTailorEvents(ttEnabled);
+
+  const publishedTtEvents = useMemo(
+    () => ttEvents.filter((event) => event.status === "published"),
+    [ttEvents],
+  );
+
+  // Houd selectie in sync als het event niet meer published is / geen link heeft.
+  useEffect(() => {
+    if (!ttEnabled || ttLoading || !fields.ticketTailorEventId) return;
+    const selected = publishedTtEvents.find(
+      (event) => event.id === fields.ticketTailorEventId,
+    );
+    if (!selected) {
+      setFields((current) => ({
+        ...current,
+        ticketTailorEventId: "",
+        url: "",
+      }));
+      return;
+    }
+    const link = ticketTailorEventLink(selected);
+    if (link && link !== fields.url) {
+      setFields((current) => ({ ...current, url: link }));
+    }
+  }, [
+    ttEnabled,
+    ttLoading,
+    publishedTtEvents,
+    fields.ticketTailorEventId,
+    fields.url,
+  ]);
 
   useEffect(() => {
     const id = "afc-josefin-sans";
@@ -271,6 +330,26 @@ export default function QRPage() {
     setFields((current) => ({ ...current, ...patch }));
   }
 
+  function onSelectTicketTailorEvent(eventId: string) {
+    if (!eventId) {
+      patchFields({ ticketTailorEventId: "", url: "" });
+      return;
+    }
+    const event = publishedTtEvents.find((item) => item.id === eventId);
+    if (!event) {
+      patchFields({ ticketTailorEventId: "", url: "" });
+      return;
+    }
+    const link = ticketTailorEventLink(event);
+    patchFields({
+      ticketTailorEventId: event.id,
+      url: link ?? "",
+    });
+    if (!appearance.caption.trim()) {
+      patchAppearance({ caption: event.name.slice(0, 60) });
+    }
+  }
+
   async function onExport(ext: ExportExt) {
     if (!activePayload || !exportSettings || exporting) return;
     setExporting(true);
@@ -396,14 +475,82 @@ export default function QRPage() {
                   </div>
                 </div>
               )}
-                {kind === "event" && (
-                  <p className={cn("text-sm", toneClass(fieldTone))}>Van zodra de ticketing geïmplementeerd wordt, kun je hier automatisch een QR-code genereren voor events.</p>
+
+              {kind === "tickettailor" && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="qr-tt-event">Gepubliceerd event</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="xs"
+                        disabled={ttLoading}
+                        onClick={() => void refetchTt()}
+                        className="text-slate-500"
+                      >
+                        Vernieuwen
+                      </Button>
+                    </div>
+                    <select
+                      id="qr-tt-event"
+                      className={controlClass}
+                      value={fields.ticketTailorEventId}
+                      disabled={ttLoading || Boolean(ttError)}
+                      onChange={(event) => onSelectTicketTailorEvent(event.target.value)}
+                    >
+                      <option value="">
+                        {ttLoading
+                          ? "Events laden…"
+                          : publishedTtEvents.length === 0
+                            ? "Geen published events"
+                            : "Kies een event…"}
+                      </option>
+                      {publishedTtEvents.map((event) => (
+                        <option key={event.id} value={event.id}>
+                          {formatTtOptionLabel(event)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {ttError && (
+                    <p className={cn("text-sm", toneClass("error"))}>{ttError}</p>
+                  )}
+
+                  {!ttError && !ttLoading && publishedTtEvents.length === 0 && (
+                    <p className={cn("text-sm", toneClass("hint"))}>
+                      Er zijn geen events met status Published in TicketTailor.
+                    </p>
+                  )}
+
+                  {fields.ticketTailorEventId && fields.url && (
+                    <p className="text-xs break-all text-slate-500">
+                      QR-link: {fields.url}
+                    </p>
+                  )}
+
+                  <p className={cn("text-sm", toneClass(fieldTone))}>{fieldMessage}</p>
+                </div>
               )}
-                {kind === "project" && (
-                  <p className={cn("text-sm", toneClass(fieldTone))}>Van zodra de ticketing geïmplementeerd wordt, kun je hier automatisch een QR-code genereren voor projects.</p>
+
+              {kind === "event" && (
+                <p className={cn("text-sm", toneClass(fieldTone))}>
+                  Van zodra de ticketing geïmplementeerd wordt, kun je hier automatisch een QR-code
+                  genereren voor events.
+                </p>
               )}
-                {kind === "workshop" && (
-                  <p className={cn("text-sm", toneClass(fieldTone))}>Van zodra de ticketing geïmplementeerd wordt, kun je hier automatisch een QR-code genereren voor workshops.</p>
+              {kind === "project" && (
+                <p className={cn("text-sm", toneClass(fieldTone))}>
+                  Van zodra de ticketing geïmplementeerd wordt, kun je hier automatisch een QR-code
+                  genereren voor projects.
+                </p>
+              )}
+              {kind === "workshop" && (
+                <p className={cn("text-sm", toneClass(fieldTone))}>
+                  Van zodra de ticketing geïmplementeerd wordt, kun je hier automatisch een QR-code
+                  genereren voor workshops.
+                </p>
               )}
             </CardContent>
           </Card>

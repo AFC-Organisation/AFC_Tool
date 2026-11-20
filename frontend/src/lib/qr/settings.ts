@@ -35,7 +35,15 @@ export const EXPORT_SIZES: { id: ExportSize; label: string }[] = [
 
 const STYLES = new Set<StyleId>(STYLE_OPTIONS.map((item) => item.id));
 const LEVELS = new Set<EcChoice>(EC_OPTIONS.map((item) => item.id));
-const KINDS = new Set<Kind>(["url", "phone", "email"]);
+const KINDS = new Set<Kind>([
+  "url",
+  "phone",
+  "email",
+  "event",
+  "workshop",
+  "project",
+  "tickettailor",
+]);
 
 export const DEFAULT_APPEARANCE: Appearance = {
   fg: NAVY,

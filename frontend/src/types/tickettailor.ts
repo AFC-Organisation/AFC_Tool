@@ -18,6 +18,7 @@ export interface TicketTailorEvent {
   tickets_available: string;
   unavailable: string;
   url: string | null;
+  checkout_url: string | null;
   currency: string;
   venue?: {
     name: string | null;
