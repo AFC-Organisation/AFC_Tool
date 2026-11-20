@@ -1,5 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
-
 export type AuthResult =
   | { ok: true; userId: string }
   | { ok: false; status: number; error: string };
@@ -11,6 +9,10 @@ function firstHeader(
   return value;
 }
 
+/**
+ * Valideert een Supabase access token via Auth REST (geen supabase-js nodig).
+ * Alleen voor lokale Vite-middleware — niet importeren vanuit api/.
+ */
 export async function requireUserFromAuthHeader(
   authorization: string | string[] | undefined,
   supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
@@ -35,20 +37,19 @@ export async function requireUserFromAuthHeader(
     return { ok: false, status: 401, error: 'Niet ingelogd.' };
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
+  const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: supabaseAnonKey,
     },
   });
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(token);
+  if (!userRes.ok) {
+    return { ok: false, status: 401, error: 'Ongeldige of verlopen sessie.' };
+  }
 
-  if (error || !user) {
+  const user = (await userRes.json()) as { id?: string };
+  if (!user?.id) {
     return { ok: false, status: 401, error: 'Ongeldige of verlopen sessie.' };
   }
 

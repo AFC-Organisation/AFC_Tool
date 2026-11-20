@@ -2,7 +2,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
-import { requireUserFromAuthHeader } from './api/_lib/requireUser'
+import { requireUserFromAuthHeader } from './server/requireUser'
 
 const TT_BASE = 'https://api.tickettailor.com/v1'
 
