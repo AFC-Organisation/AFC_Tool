@@ -46,11 +46,6 @@ const navItems: NavItem[] = [
     href: '/academiejaren',
     icon: GraduationCap,
   },
-  /**{
-    label: 'QR Generator',
-    href: '/qrgenerator',
-    icon: QrCode,
-  },**/
   {
     label: 'Ticketing',
     href: '/ticketing',
@@ -65,6 +60,11 @@ const navItems: NavItem[] = [
     label: 'QR Generator',
     href: '/qr',
     icon: QrCode,
+  },
+  {
+    label: 'TicketTailor Overview',
+    href: '/ttoverview',
+    icon: Ticket,
   },
   {
     label: 'Prullenbak',

@@ -35,6 +35,9 @@ const KINDS: { id: Kind; label: string }[] = [
   { id: "url", label: "Link" },
   { id: "phone", label: "Telefoon" },
   { id: "email", label: "E-mail" },
+  { id: "event", label: "Event" },
+  { id: "workshop", label: "Workshop" },
+  { id: "project", label: "Project" },
 ];
 
 type Tone = "ok" | "warn" | "muted" | "hint" | "error";
@@ -393,8 +396,15 @@ export default function QRPage() {
                   </div>
                 </div>
               )}
-
-              <p className={cn("text-sm", toneClass(fieldTone))}>{fieldMessage}</p>
+                {kind === "event" && (
+                  <p className={cn("text-sm", toneClass(fieldTone))}>Van zodra de ticketing geïmplementeerd wordt, kun je hier automatisch een QR-code genereren voor events.</p>
+              )}
+                {kind === "project" && (
+                  <p className={cn("text-sm", toneClass(fieldTone))}>Van zodra de ticketing geïmplementeerd wordt, kun je hier automatisch een QR-code genereren voor projects.</p>
+              )}
+                {kind === "workshop" && (
+                  <p className={cn("text-sm", toneClass(fieldTone))}>Van zodra de ticketing geïmplementeerd wordt, kun je hier automatisch een QR-code genereren voor workshops.</p>
+              )}
             </CardContent>
           </Card>
 

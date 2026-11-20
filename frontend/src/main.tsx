@@ -13,6 +13,7 @@ import TicketingPage from "./pages/TicketingPage"
 import MailingPage from "./pages/MailingPage"
 import QRPage from "./pages/QRPage"
 import TrashPage from "./pages/TrashPage"
+import TTOverviewPage from "./pages/TTOverviewPage"
 
 
 const router = createBrowserRouter([
@@ -54,6 +55,10 @@ const router = createBrowserRouter([
       {
         path: "/qr",
         element: <QRPage />,
+      },  
+      {
+        path: "/ttoverview",
+        element: <TTOverviewPage />,
       },  
       {
         path: "/prullenbak",
