@@ -2,16 +2,33 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import { requireUserFromAuthHeader } from './api/_lib/requireUser'
 
 const TT_BASE = 'https://api.tickettailor.com/v1'
 
-function ticketTailorApiPlugin(apiKey: string | undefined): Plugin {
+function ticketTailorApiPlugin(env: Record<string, string>): Plugin {
+  const apiKey = env.TICKET_TAILOR_API_KEY
+  const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL
+  const supabaseAnonKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY
+
   return {
     name: 'tickettailor-api',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         if (!req.url?.startsWith('/api/tickettailor/events')) {
           next()
+          return
+        }
+
+        const auth = await requireUserFromAuthHeader(
+          req.headers.authorization,
+          supabaseUrl,
+          supabaseAnonKey,
+        )
+        if (!auth.ok) {
+          res.statusCode = auth.status
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ error: auth.error }))
           return
         }
 
@@ -27,10 +44,10 @@ function ticketTailorApiPlugin(apiKey: string | undefined): Plugin {
         }
 
         try {
-          const auth = Buffer.from(`${apiKey}:`).toString('base64')
+          const ttAuth = Buffer.from(`${apiKey}:`).toString('base64')
           const headers = {
             Accept: 'application/json',
-            Authorization: `Basic ${auth}`,
+            Authorization: `Basic ${ttAuth}`,
           }
 
           const all: unknown[] = []
@@ -78,7 +95,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
-      ticketTailorApiPlugin(env.TICKET_TAILOR_API_KEY),
+      ticketTailorApiPlugin(env),
     ],
     resolve: {
       alias: {

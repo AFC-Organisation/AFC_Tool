@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { requireUserFromAuthHeader } from '../_lib/requireUser';
 
 const TT_BASE = 'https://api.tickettailor.com/v1';
 
@@ -36,6 +37,11 @@ async function fetchAllEvents(apiKey: string) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const auth = await requireUserFromAuthHeader(req.headers.authorization);
+  if (!auth.ok) {
+    return res.status(auth.status).json({ error: auth.error });
   }
 
   const apiKey = process.env.TICKET_TAILOR_API_KEY;

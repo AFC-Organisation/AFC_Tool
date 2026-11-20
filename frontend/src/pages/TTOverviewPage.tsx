@@ -82,7 +82,7 @@ export default function TTOverviewPage() {
   return (
     <AppLayout
       title="TicketTailor Overview"
-      subtitle="Live events en inschrijvingen via de TicketTailor API."
+      subtitle="Live events en inschrijvingen via de TicketTailor-API. Dit dient als 'stop-gap' solution tot ticketing (volledig) geïmplementeerd wordt in de tool."
     >
       <div className="space-y-6">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -110,7 +110,7 @@ export default function TTOverviewPage() {
               Bron
             </div>
             <p className="mt-2 text-sm font-medium text-[#041c3a]">
-              GET /v1/events · total_issued_tickets
+              TicketTailor API-(HTTP GET-requests naar /v1/events: total_issued_tickets)
             </p>
           </div>
         </div>
